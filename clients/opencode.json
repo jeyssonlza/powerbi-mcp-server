@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "powerbi": {
+      "type": "local",
+      "command": [
+        "C:\\Users\\jeyss\\Desktop\\mcp visual PBI\\.venv\\Scripts\\python.exe",
+        "-m",
+        "powerbi_mcp"
+      ],
+      "enabled": true,
+      "environment": {
+        "PBIMCP_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

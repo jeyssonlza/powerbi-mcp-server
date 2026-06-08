@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "powerbi": {
+      "type": "stdio",
+      "command": "C:\\Users\\jeyss\\Desktop\\mcp visual PBI\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "powerbi_mcp"],
+      "env": {
+        "PBIMCP_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

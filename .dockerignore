@@ -1,0 +1,86 @@
+# ===========================================================================
+# .dockerignore - Excluye archivos innecesarios de la imagen Docker
+# ===========================================================================
+
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing
+.pytest_cache
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.hypothesis/
+
+# Linting/formatting
+.mypy_cache
+.ruff_cache
+*.ruff.toml
+
+# Virtual environments
+.venv
+venv
+env
+ENV
+build
+develop-eggs
+dist
+downloads
+eggs
+.eggs
+lib
+lib64
+parts
+sdist
+var
+wheels
+pip-wheel-metadata
+share/python-wheels
+*.egg-info
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Documentation
+docs
+README.md
+*.md
+LICENSE
+CHANGELOG.md
+
+# Development
+.env
+.env.local
+.env.example
+tests
+scripts
+logs
+.pbip_backups
+clients
+
+# Docker
+docker-compose.override.yml
+Dockerfile.dev

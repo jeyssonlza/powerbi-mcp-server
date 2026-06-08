@@ -1,0 +1,131 @@
+# ===========================================================================
+# RELEASE WORKFLOW — Publish to PyPI on version tag push
+# Trigger: git tag v0.1.0 && git push --tags
+# ===========================================================================
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write   # create GitHub Release
+  id-token:  write  # OIDC for PyPI trusted publisher
+
+jobs:
+  # ─── Build distribution ──────────────────────────────────────────────────
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history for changelog
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip build twine
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Check distribution
+        run: python -m twine check dist/*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # ─── Run tests before publishing ─────────────────────────────────────────
+  test:
+    name: Tests (Python 3.12)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package + dev dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run full test suite
+        run: pytest -q --cov=powerbi_mcp --cov-fail-under=75
+
+  # ─── Publish to PyPI (Trusted Publisher / OIDC) ──────────────────────────
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    environment: pypi                   # requires "pypi" environment in repo settings
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses OIDC Trusted Publisher — no API token needed if configured on pypi.org
+
+  # ─── Create GitHub Release with changelog ────────────────────────────────
+  github-release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: publish-pypi
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Power BI MCP Server v${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## Power BI MCP Server v${{ steps.version.outputs.VERSION }}
+
+            ### Installation
+            ```bash
+            pip install powerbi-mcp-server==${{ steps.version.outputs.VERSION }}
+            ```
+
+            ### What's Changed
+            See [CHANGELOG.md](https://github.com/jeyssonzerpa/powerbi-mcp-server/blob/main/CHANGELOG.md) for full details.
+
+            ---
+            **67 MCP Tools** for Power BI | PBIP & PBIX | AI/ML | Security | Docker-ready
+          files: dist/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          generate_release_notes: true

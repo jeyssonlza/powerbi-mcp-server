@@ -1,0 +1,164 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/registry/main/schema/manifest.json",
+  "name": "powerbi-mcp-server",
+  "displayName": "Power BI MCP Server",
+  "version": "0.1.0",
+  "description": "Professional MCP server for Power BI automation — 67 tools for PBIP/PBIX project management, semantic modeling, AI/ML analytics, visualization, documentation, security, and Power BI Service integration.",
+  "author": {
+    "name": "Jeysson Zerpa",
+    "email": "jeyssonzerpa@gmail.com",
+    "url": "https://github.com/jeyssonzerpa"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeyssonzerpa/powerbi-mcp-server"
+  },
+  "homepage": "https://powerbi-mcp-server.readthedocs.io",
+  "license": "MIT",
+  "keywords": [
+    "power-bi",
+    "pbip",
+    "pbix",
+    "mcp",
+    "model-context-protocol",
+    "dax",
+    "data-modeling",
+    "business-intelligence",
+    "ai",
+    "machine-learning",
+    "analytics",
+    "microsoft",
+    "data-science"
+  ],
+  "categories": [
+    "Data & Analytics",
+    "Business Intelligence",
+    "Microsoft 365",
+    "AI & ML"
+  ],
+  "runtime": {
+    "type": "python",
+    "version": ">=3.10",
+    "install": "pip install powerbi-mcp-server",
+    "command": "powerbi-mcp"
+  },
+  "docker": {
+    "image": "jeyssonzerpa/powerbi-mcp-server",
+    "tag": "0.1.0",
+    "compose": "docker-compose.yml"
+  },
+  "configuration": {
+    "required": [],
+    "optional": [
+      {
+        "name": "POWERBI_TENANT_ID",
+        "description": "Azure AD Tenant ID for Power BI Service API",
+        "type": "string",
+        "secret": false
+      },
+      {
+        "name": "POWERBI_CLIENT_ID",
+        "description": "Azure AD Application (client) ID",
+        "type": "string",
+        "secret": false
+      },
+      {
+        "name": "POWERBI_CLIENT_SECRET",
+        "description": "Azure AD Client Secret for OAuth2 authentication",
+        "type": "string",
+        "secret": true
+      },
+      {
+        "name": "POWERBI_PROJECT_DIR",
+        "description": "Default directory for Power BI projects",
+        "type": "string",
+        "default": "./projects"
+      }
+    ]
+  },
+  "tools": {
+    "total": 67,
+    "domains": [
+      {
+        "name": "project",
+        "count": 11,
+        "description": "PBIP/PBIX project lifecycle management",
+        "tools": [
+          "project_info", "project_structure", "project_create", "project_read",
+          "project_update_metadata", "project_list", "project_export_pbix",
+          "project_import_pbip", "project_backup", "project_restore_backup", "project_delete"
+        ]
+      },
+      {
+        "name": "model",
+        "count": 23,
+        "description": "Semantic model: tables, columns, measures, relationships",
+        "tools": [
+          "table_create", "table_list", "table_read", "table_update", "table_delete",
+          "table_add_partition", "table_set_calculation_group",
+          "column_create", "column_list", "column_update", "column_delete", "column_add_format",
+          "measure_create", "measure_list", "measure_update", "measure_delete", "measure_validate_dax",
+          "relationship_create", "relationship_list", "relationship_update", "relationship_delete",
+          "model_info", "model_validate"
+        ]
+      },
+      {
+        "name": "ai",
+        "count": 8,
+        "description": "Machine learning and AI analytics",
+        "tools": [
+          "ai_detect_anomalies", "ai_clustering_kmeans", "ai_clustering_hierarchical",
+          "ai_forecasting_arima", "ai_forecasting_exponential",
+          "ai_segmentation_rfm", "ai_correlation_pearson", "ai_correlation_spearman"
+        ]
+      },
+      {
+        "name": "visuals",
+        "count": 7,
+        "description": "Report pages, charts, and visual elements",
+        "tools": [
+          "visual_create_page", "visual_add_chart", "visual_add_table", "visual_add_matrix",
+          "visual_apply_theme", "visual_export_html", "visual_generate_report"
+        ]
+      },
+      {
+        "name": "analysis",
+        "count": 5,
+        "description": "Data quality, profiling, and pattern detection",
+        "tools": [
+          "analysis_data_quality", "analysis_profile_data", "analysis_detect_patterns",
+          "analysis_performance_metrics", "analysis_suggest_optimizations"
+        ]
+      },
+      {
+        "name": "docs",
+        "count": 3,
+        "description": "Automated documentation generation",
+        "tools": ["docs_generate_markdown", "docs_generate_html", "docs_generate_data_dictionary"]
+      },
+      {
+        "name": "security",
+        "count": 6,
+        "description": "PII masking, encryption, audit logs, backups",
+        "tools": [
+          "security_mask_pii", "security_hash_column",
+          "security_encrypt_file", "security_decrypt_file",
+          "security_audit_log_read", "security_backup_project"
+        ]
+      },
+      {
+        "name": "pbi_api",
+        "count": 5,
+        "description": "Power BI Service REST API integration",
+        "tools": [
+          "pbi_list_workspaces", "pbi_list_datasets", "pbi_list_reports",
+          "pbi_execute_dax", "pbi_refresh_dataset"
+        ]
+      }
+    ]
+  },
+  "compatibility": {
+    "claude": ">=3.0",
+    "mcp": ">=1.2.0"
+  }
+}

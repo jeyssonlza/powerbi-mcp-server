@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/jeyssonzerpa/powerbi-mcp-server/blob/main/SECURITY.md
+    about: Report security issues privately before opening a public issue.
+  - name: Contributing guide
+    url: https://github.com/jeyssonzerpa/powerbi-mcp-server/blob/main/CONTRIBUTING.md
+    about: Read how to set up the project and submit changes.

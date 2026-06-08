@@ -1,0 +1,31 @@
+name: Good first issue proposal
+description: Propose a small task suitable for new contributors
+title: "[Good first issue]: "
+labels: ["good first issue"]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: Task description
+      description: A small, well-scoped improvement a newcomer can tackle.
+    validations:
+      required: true
+
+  - type: textarea
+    id: hints
+    attributes:
+      label: Hints for implementers
+      description: Files to touch, tests to add, or docs to read.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Estimated difficulty
+      options:
+        - Easy (< 2 hours)
+        - Medium (half day)
+        - Larger (1+ days)
+    validations:
+      required: true

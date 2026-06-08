@@ -1,0 +1,109 @@
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ---------------------------------------------------------------------------
+# Entornos virtuales
+# ---------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ---------------------------------------------------------------------------
+# Testing / Coverage
+# ---------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ---------------------------------------------------------------------------
+# Type checkers / Linters
+# ---------------------------------------------------------------------------
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+
+# ---------------------------------------------------------------------------
+# IDEs y editores
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Secretos y configuracion sensible (NUNCA subir a git)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+secrets/
+.secrets/
+credentials.json
+token_cache.bin
+
+# ---------------------------------------------------------------------------
+# Datos y artefactos del MCP Power BI
+# ---------------------------------------------------------------------------
+# Respaldos automaticos generados por el servidor
+backups/
+.pbip_backups/
+
+# Logs
+logs/
+*.log
+
+# Salidas generadas (HTML, reportes, documentacion temporal)
+output/
+.cache/
+
+# Archivos Power BI binarios pesados (mantener solo PBIP en git)
+*.pbix
+*.pbit
+*.abf
+
+# ---------------------------------------------------------------------------
+# Jupyter / notebooks de exploracion
+# ---------------------------------------------------------------------------
+.ipynb_checkpoints/
+*.ipynb

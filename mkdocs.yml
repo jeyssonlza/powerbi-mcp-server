@@ -1,0 +1,111 @@
+# ===========================================================================
+# MkDocs configuration — Power BI MCP Server
+# Build locally: mkdocs serve
+# Build static:  mkdocs build
+# ===========================================================================
+site_name: Power BI MCP Server
+site_description: Professional MCP server for Power BI automation — 67 tools for PBIP/PBIX, AI/ML, Security, and Cloud integration
+site_author: Jeysson Zerpa
+site_url: https://powerbi-mcp-server.readthedocs.io
+
+repo_name: jeyssonzerpa/powerbi-mcp-server
+repo_url: https://github.com/jeyssonzerpa/powerbi-mcp-server
+edit_uri: edit/main/docs/
+
+# ─── Theme ─────────────────────────────────────────────────────────────────
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - toc.integrate
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+# ─── Navigation ────────────────────────────────────────────────────────────
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - Tools Reference:
+      - Overview: tools/overview.md
+      - Project Tools (11): tools/project-tools.md
+      - Model Tools (23): tools/model-tools.md
+      - AI & ML Tools (8): tools/ai-tools.md
+      - Visuals Tools (7): tools/visuals-tools.md
+      - Analysis Tools (5): tools/analysis-tools.md
+      - Documentation Tools (3): tools/docs-tools.md
+      - Security Tools (6): tools/security-tools.md
+      - Power BI API Tools (5): tools/pbi-api-tools.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Modular Design: architecture/modular-design.md
+  - Deployment:
+      - Docker: deployment/docker.md
+      - Docker Compose: deployment/docker-compose.md
+  - Changelog: changelog.md
+
+# ─── Plugins ───────────────────────────────────────────────────────────────
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+
+# ─── Extensions ────────────────────────────────────────────────────────────
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - toc:
+      permalink: true
+
+# ─── Extra ─────────────────────────────────────────────────────────────────
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jeyssonzerpa/powerbi-mcp-server
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/powerbi-mcp-server/

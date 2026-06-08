@@ -1,0 +1,39 @@
+# ===========================================================================
+# Power BI MCP Server - Dependencias de producción
+# Python >= 3.10  (compatible hasta 3.14)
+# ===========================================================================
+
+# --- Protocolo MCP -----------------------------------------------------------
+mcp>=1.2.0                  # SDK oficial Model Context Protocol (incluye FastMCP)
+
+# --- Validación y modelos de datos ------------------------------------------
+pydantic>=2.6.0             # Modelos tipados y validación de esquemas
+pydantic-settings>=2.2.0    # Carga de configuración desde entorno/.env
+
+# --- Manipulación de datos ---------------------------------------------------
+pandas>=2.2.0               # DataFrames para análisis y perfilado
+numpy>=1.26.0               # Cálculo numérico base
+pyarrow>=15.0.0             # Lectura/escritura columnar (parquet, IPC)
+openpyxl>=3.1.0             # Soporte Excel (.xlsx)
+
+# --- Inteligencia Artificial / Machine Learning -----------------------------
+scikit-learn>=1.4.0         # Clustering, regresión, clasificación, árboles
+scipy>=1.12.0               # Estadística, distancias, jerarquías
+statsmodels>=0.14.0         # Series de tiempo, regresión estadística
+
+# --- Visualización -----------------------------------------------------------
+plotly>=5.20.0              # Visuales HTML interactivos
+jinja2>=3.1.0               # Plantillas HTML/Markdown para reportes y docs
+
+# --- Seguridad ---------------------------------------------------------------
+cryptography>=42.0.0        # Encriptación AES-256, Fernet, hashing seguro
+
+# --- Configuración y entorno -------------------------------------------------
+python-dotenv>=1.0.0        # Carga de variables desde .env
+
+# --- Integración Power BI Service (REST API) --------------------------------
+requests>=2.31.0            # Cliente HTTP para la REST API
+msal>=1.28.0               # Autenticación OAuth2 / Azure AD (Microsoft)
+
+# --- Utilidades / Logging ----------------------------------------------------
+rich>=13.7.0                # Logs y trazas formateadas en consola

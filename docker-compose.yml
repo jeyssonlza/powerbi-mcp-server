@@ -1,0 +1,61 @@
+# ===========================================================================
+# Docker Compose - Power BI MCP Server
+# ===========================================================================
+version: '3.9'
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: powerbi-mcp-server
+
+    # Ports para conectar desde clientes MCP
+    ports:
+      - "8000:8000"
+
+    # Volumes para código y configuración
+    volumes:
+      # Mount de código para desarrollo
+      - ./src:/app/src:ro
+      # Mount de configuración
+      - ./config:/app/config:ro
+      # Mount de logs
+      - ./logs:/app/logs
+
+    # Variables de entorno (sobrescribir con -e en cli o .env)
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - POWERBI_TENANT_ID=${POWERBI_TENANT_ID}
+      - POWERBI_CLIENT_ID=${POWERBI_CLIENT_ID}
+      - POWERBI_CLIENT_SECRET=${POWERBI_CLIENT_SECRET}
+
+    # Networking
+    networks:
+      - mcp-network
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import powerbi_mcp; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+networks:
+  mcp-network:
+    driver: bridge

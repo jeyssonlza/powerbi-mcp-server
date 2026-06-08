@@ -1,0 +1,23 @@
+# ===========================================================================
+# Power BI MCP Server - Dependencias de desarrollo
+# Instalar con:  pip install -r requirements-dev.txt
+# ===========================================================================
+-r requirements.txt
+
+# --- Testing -----------------------------------------------------------------
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-benchmark>=4.0.0
+responses>=0.24.0
+psutil>=5.9.0
+
+# --- Calidad de código -------------------------------------------------------
+ruff>=0.3.0                 # Linter + formateador ultrarrápido
+mypy>=1.9.0                 # Verificación de tipos estática
+black>=24.0.0              # Formateador (opcional, ruff format lo cubre)
+
+# --- Documentación -----------------------------------------------------------
+mkdocs>=1.5.0
+mkdocs-material>=9.5.0

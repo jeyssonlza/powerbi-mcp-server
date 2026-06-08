@@ -1,0 +1,9 @@
+# Añade esta sección a tu ~/.codex/config.toml
+# Codex usa formato TOML para declarar servidores MCP.
+
+[mcp_servers.powerbi]
+command = "C:\\Users\\jeyss\\Desktop\\mcp visual PBI\\.venv\\Scripts\\python.exe"
+args = ["-m", "powerbi_mcp"]
+
+[mcp_servers.powerbi.env]
+PBIMCP_LOG_LEVEL = "INFO"
