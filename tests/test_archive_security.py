@@ -67,9 +67,8 @@ class TestZipSecurity:
         dest = tmp_path / "extracted"
         dest.mkdir()
 
-        with zipfile.ZipFile(zip_path) as zf:
-            with pytest.raises(ValueError):
-                safe_extract_zip(zf, dest)
+        with zipfile.ZipFile(zip_path) as zf, pytest.raises(ValueError):
+            safe_extract_zip(zf, dest)
 
         # Evil file no debe existir fuera de destino
         assert not (tmp_path / "evil.txt").exists()
@@ -86,7 +85,7 @@ class TestZipSecurity:
         dest.mkdir()
 
         with zipfile.ZipFile(zip_path) as zf:
-            extracted = safe_extract_zip(zf, dest, members=["file1.txt", "file3.txt"])
+            safe_extract_zip(zf, dest, members=["file1.txt", "file3.txt"])
 
         assert (dest / "file1.txt").exists()
         assert not (dest / "file2.txt").exists()
@@ -107,14 +106,19 @@ class TestZipSecurity:
         assert (dest / "a" / "b" / "c" / "deep.txt").exists()
         assert (dest / "a" / "b" / "c" / "deep.txt").read_text() == "nested"
 
-    def test_normalize_backslashes(self, tmp_path: Path) -> None:
-        """Backslashes (Windows) deben normalizarse."""
+    def test_backslashes_are_accepted_as_safe(self, tmp_path: Path) -> None:
+        """Un miembro con backslashes (no es path traversal) debe aceptarse.
+
+        La validación normaliza los separadores internamente para comprobar la
+        seguridad, pero devuelve el nombre original sin alterar (así
+        ``zipfile.extractall(members=...)`` puede localizarlo en el ZIP).
+        """
         members = ["folder\\subfolder\\file.txt"]
         safe = validate_zip_members(members, tmp_path)
 
         assert len(safe) == 1
-        # Debe normalizarse a forward slash
-        assert "/" in safe[0] or "\\" not in safe[0]
+        # El nombre se devuelve tal cual (sin transformar) para extractall.
+        assert safe[0] == "folder\\subfolder\\file.txt"
 
     def test_multiple_dangerous_patterns(self, tmp_path: Path) -> None:
         """Múltiples patrones peligrosos deben detectarse."""

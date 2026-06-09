@@ -72,7 +72,9 @@ def validate_zip_members(members: Iterable[str], destination: str | Path) -> lis
                 pass
         except ValueError:
             # relative_to() falla si target no está bajo dest
-            raise ValueError(f"Miembro ZIP escapa del destino: {member} -> {target}")
+            raise ValueError(
+                f"Miembro ZIP escapa del destino: {member} -> {target}"
+            ) from None
 
         safe_members.append(member)
 

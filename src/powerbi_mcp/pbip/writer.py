@@ -18,6 +18,7 @@ Sobre formatos:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
@@ -121,10 +122,8 @@ def _atomic_write(target: Path, content: str) -> None:
         os.replace(tmp_name, target)
     except BaseException:
         # Limpia el temporal si algo falla.
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp_name)
-        except OSError:
-            pass
         raise
 
 

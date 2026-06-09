@@ -187,9 +187,13 @@ def _rule_column_summarize_by(model: SemanticModel, c: _Collector) -> None:
         for col in table.columns:
             name_low = col.name.lower()
             is_key = any(t in name_low for t in ("id", "key", "código", "codigo", "clave"))
-            if is_key and col.data_type in {"int64", "double", "decimal"}:
-                if col.summarize_by not in {"none", None} and col.summarize_by != "none":
-                    c.add(
+            if (
+                is_key
+                and col.data_type in {"int64", "double", "decimal"}
+                and col.summarize_by not in {"none", None}
+                and col.summarize_by != "none"
+            ):
+                c.add(
                         rule_id="formatting.key_summarize_none",
                         category="formatting",
                         severity="warning",

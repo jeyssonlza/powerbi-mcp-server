@@ -10,9 +10,10 @@ from __future__ import annotations
 from typing import Any
 
 
-def _tool(func):
+def _tool(func: Any) -> Any:
     """Decorador: captura errores del dominio y los devuelve estructurados."""
     import functools
+
     from powerbi_mcp.core.exceptions import PowerBIMCPError
     from powerbi_mcp.core.logger import get_logger
 
@@ -37,7 +38,7 @@ def _tool(func):
     return wrapper
 
 
-def register_security_tools(mcp) -> None:
+def register_security_tools(mcp: Any) -> None:
     """Registra todas las herramientas de seguridad en la instancia MCP."""
 
     @mcp.tool()

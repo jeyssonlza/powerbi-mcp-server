@@ -1,123 +1,117 @@
-"""Tests para regresión lineal y random forest."""
+"""Tests para regresión (lineal y random forest).
+
+Valida el contrato real de ``train_regression`` -> ``AIResult`` cuyo ``summary``
+incluye ``metrics`` (``r2``, ``mae``, ``rmse``) y ``feature_importance``, y cuyo
+``table`` es la importancia/coeficientes por variable.
+"""
 
 from __future__ import annotations
 
 import pandas as pd
 import pytest
 
-from powerbi_mcp.ai.regression import train_regression
+from powerbi_mcp.ai.regression import VALID_ALGORITHMS, train_regression
+from powerbi_mcp.core.exceptions import ValidationError
 
 
 class TestRegression:
     """Suite de tests para regresión."""
 
-    def test_linear_regression(self, sample_numeric_data: pd.DataFrame) -> None:
-        """Linear regression debe entrenar y reportar métricas."""
+    def test_linear_returns_metrics(self, sample_numeric_data: pd.DataFrame) -> None:
+        """La regresión lineal debe entrenar y reportar métricas r2/mae/rmse."""
         result = train_regression(
             sample_numeric_data,
             target_column="Feature5",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             algorithm="linear",
         )
-
-        assert result.ok
         assert result.model_type == "regression"
-        assert result.metrics is not None
-        assert "r2" in result.metrics or "r_squared" in result.metrics
+        metrics = result.summary["metrics"]
+        assert "r2" in metrics
+        assert "mae" in metrics
+        assert "rmse" in metrics
 
-    def test_random_forest_regression(self, sample_numeric_data: pd.DataFrame) -> None:
-        """Random Forest regression debe funcionar."""
+    def test_metrics_non_negative(self, sample_numeric_data: pd.DataFrame) -> None:
+        """MAE y RMSE deben ser no negativos."""
+        result = train_regression(
+            sample_numeric_data,
+            target_column="Feature5",
+            feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
+            algorithm="linear",
+        )
+        assert result.summary["metrics"]["mae"] >= 0
+        assert result.summary["metrics"]["rmse"] >= 0
+
+    def test_random_forest_works(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Random Forest debe entrenar correctamente."""
         result = train_regression(
             sample_numeric_data,
             target_column="Feature5",
             feature_columns=["Feature1", "Feature2", "Feature3"],
             algorithm="random_forest",
         )
+        assert result.summary["algorithm"] == "random_forest"
 
-        assert result.ok
-        assert result.model_type == "regression"
-
-    def test_regression_with_csv_input(self, sample_csv_file: Path) -> None:
-        """Debe aceptar ruta a CSV."""
-        result = train_regression(
-            str(sample_csv_file),
-            target_column="Amount",
-            feature_columns=["Quantity"],
-            algorithm="linear",
-        )
-
-        assert result.ok
-
-    def test_regression_auto_detect_features(self, sample_numeric_data: pd.DataFrame) -> None:
-        """Debe autodetectar features si no se especifican."""
-        result = train_regression(
-            sample_numeric_data,
-            target_column="Feature5",
-            feature_columns=None,  # Auto
-            algorithm="linear",
-        )
-
-        assert result.ok
-        assert result.metrics is not None
-
-    def test_regression_metrics_validity(self, sample_numeric_data: pd.DataFrame) -> None:
-        """Las métricas deben estar en rango válido."""
-        result = train_regression(
-            sample_numeric_data,
-            target_column="Feature5",
-            feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
-            algorithm="linear",
-        )
-
-        assert result.ok
-        metrics = result.metrics
-        # R2 debe estar entre -inf y 1 (negativo es malo, pero posible)
-        # MAE y RMSE deben ser >= 0
-        r2 = metrics.get("r2") or metrics.get("r_squared")
-        mae = metrics.get("mae") or metrics.get("mean_absolute_error")
-        rmse = metrics.get("rmse") or metrics.get("root_mean_squared_error")
-
-        assert mae is None or mae >= 0
-        assert rmse is None or rmse >= 0
-
-    def test_regression_feature_importance(self, sample_numeric_data: pd.DataFrame) -> None:
-        """El resultado debe incluir importancia de features."""
+    def test_feature_importance_present(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Debe incluir una fila de importancia por feature."""
         result = train_regression(
             sample_numeric_data,
             target_column="Feature5",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             algorithm="random_forest",
         )
+        assert len(result.table) == 4
+        for row in result.table:
+            assert "feature" in row
+            assert "value" in row
 
-        assert result.ok
-        result_dict = result.to_dict()
-        # Feature importance para random forest
-        assert "feature_importance" in result_dict or "importance" in result_dict
+    def test_auto_detect_features(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Sin feature_columns, debe usar todas las demás columnas."""
+        result = train_regression(
+            sample_numeric_data, target_column="Feature5", algorithm="linear"
+        )
+        assert result.summary["n_features"] == 4
+
+    def test_summary_reports_target_and_samples(self, sample_numeric_data: pd.DataFrame) -> None:
+        """El summary debe reportar el objetivo y el número de muestras."""
+        result = train_regression(
+            sample_numeric_data, target_column="Feature5", algorithm="linear"
+        )
+        assert result.summary["target"] == "Feature5"
+        assert result.summary["n_samples"] == len(sample_numeric_data)
 
     @pytest.mark.parametrize("algorithm", ["linear", "random_forest"])
     def test_all_algorithms_work(
         self, sample_numeric_data: pd.DataFrame, algorithm: str
     ) -> None:
-        """Todos los algoritmos deben funcionar."""
+        """Ambos algoritmos deben funcionar."""
         result = train_regression(
             sample_numeric_data,
             target_column="Feature5",
             feature_columns=["Feature1", "Feature2"],
             algorithm=algorithm,
         )
+        assert result.model_type == "regression"
 
-        assert result.ok
+    def test_invalid_algorithm_raises(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Un algoritmo no soportado debe lanzar ValidationError."""
+        with pytest.raises(ValidationError):
+            train_regression(sample_numeric_data, target_column="Feature5", algorithm="svm")
 
-    def test_regression_result_serialization(self, sample_numeric_data: pd.DataFrame) -> None:
-        """El resultado debe ser serializable."""
+    def test_missing_target_raises(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Una columna objetivo inexistente debe lanzar ValidationError."""
+        with pytest.raises(ValidationError):
+            train_regression(sample_numeric_data, target_column="NoExiste", algorithm="linear")
+
+    def test_result_serializable(self, sample_numeric_data: pd.DataFrame) -> None:
+        """El resultado debe serializarse a un diccionario con métricas."""
         result = train_regression(
-            sample_numeric_data,
-            target_column="Feature5",
-            feature_columns=["Feature1", "Feature2"],
-            algorithm="linear",
+            sample_numeric_data, target_column="Feature5", algorithm="linear"
         )
+        as_dict = result.to_dict()
+        assert as_dict["model_type"] == "regression"
+        assert "metrics" in as_dict["metadata"]
 
-        result_dict = result.to_dict()
-        assert isinstance(result_dict, dict)
-        assert "model_type" in result_dict
-        assert "metrics" in result_dict
+    def test_valid_algorithms_constant(self) -> None:
+        """La constante VALID_ALGORITHMS debe contener los dos algoritmos."""
+        assert {"linear", "random_forest"} == VALID_ALGORITHMS

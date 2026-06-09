@@ -142,9 +142,9 @@ def main() -> int:
         check("duplicado rechazado", not r.get("ok") and r.get("code") == "duplicate_object", str(r))
 
         # 10. dry_run no escribe
-        before = len(server.list_measures()["measures"])
+        len(server.list_measures()["measures"])
         r = server.add_measure("Ventas", "Medida DryRun", "1+1", dry_run=True)
-        after = len(server.list_measures()["measures"])
+        len(server.list_measures()["measures"])
         # En dry_run la medida SÍ se agrega en memoria pero no se guarda en disco;
         # verificamos que el resultado marque dry_run.
         check("dry_run marcado", r.get("ok") and r.get("dry_run") is True, str(r))

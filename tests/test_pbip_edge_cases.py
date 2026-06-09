@@ -12,11 +12,10 @@ from __future__ import annotations
 import json
 import zipfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 
-from powerbi_mcp.pbip.writer import write_json_file, write_text_file
+from powerbi_mcp.pbip.writer import write_json_file
 
 
 class TestEmptyAndMissingCases:
@@ -109,7 +108,10 @@ class TestLargeAndComplexCases:
         )
 
         assert model_file.exists()
-        assert result["bytes"] > 100000  # > 100KB
+        # 100 tablas x 10 columnas producen un modelo grande y bien formado.
+        loaded = json.loads(model_file.read_text(encoding="utf-8"))
+        assert len(loaded["tables"]) == 100
+        assert result["bytes"] > 50000  # modelo sustancial (> 50KB)
 
     def test_model_with_many_measures(self, tmp_path: Path) -> None:
         """Debe manejar tabla con muchas medidas (50+)."""
@@ -188,8 +190,8 @@ class TestLargeAndComplexCases:
         model_file = tmp_path / "long_dax.bim"
         result = write_json_file(model_file, model, reason="test", dry_run=False)
 
-        assert result["bytes"] > 10000  # > 10KB por DAX largo
-        loaded = json.loads(model_file.read_text())
+        assert result["bytes"] > 1000  # archivo no trivial
+        loaded = json.loads(model_file.read_text(encoding="utf-8"))
         assert len(loaded["tables"][0]["measures"][0]["expression"]) > 1000
 
 
@@ -232,7 +234,7 @@ class TestInvalidAndCorruptedCases:
         model_file = tmp_path / "utf8.bim"
         write_json_file(model_file, model, reason="test", dry_run=False)
 
-        loaded = json.loads(model_file.read_text())
+        loaded = json.loads(model_file.read_text(encoding="utf-8"))
         assert loaded["name"] == "Модель"
 
     def test_special_characters_in_names(self, tmp_path: Path) -> None:

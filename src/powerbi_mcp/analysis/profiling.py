@@ -97,9 +97,11 @@ def _infer_semantic_type(series: pd.Series, distinct: int, n_rows: int) -> str:
         return "boolean"
     if distinct == n_rows and n_rows > 0:
         return "identifier"
-    if any(token in name for token in ("id", "key", "code", "codigo", "clave")):
-        if distinct / max(n_rows, 1) > 0.9:
-            return "identifier"
+    if (
+        any(token in name for token in ("id", "key", "code", "codigo", "clave"))
+        and distinct / max(n_rows, 1) > 0.9
+    ):
+        return "identifier"
     if pd.api.types.is_numeric_dtype(series):
         return "numeric"
     if distinct <= max(20, int(0.05 * n_rows)):

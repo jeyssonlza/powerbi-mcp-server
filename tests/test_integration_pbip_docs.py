@@ -11,8 +11,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 
 class TestPBIPToDocumentationWorkflow:
     """Suite de tests para el flujo completo PBIP → Documentación."""
@@ -212,7 +210,7 @@ class TestTypeHintsAndValidation:
 
     def test_table_spec_validation(self) -> None:
         """Debe validar especificación de tablas."""
-        from powerbi_mcp.types import TableSpec, FieldSpec, MeasureSpec
+        from powerbi_mcp.types import FieldSpec, MeasureSpec, TableSpec
 
         columns: list[FieldSpec] = [
             {"name": "ID", "data_type": "int64", "nullable": False},

@@ -9,7 +9,6 @@ Este módulo proporciona:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -83,7 +82,7 @@ def sample_forecast_data() -> pd.DataFrame:
     # Tendencia + estacionalidad
     trend = [i * 10 for i in range(24)]
     seasonal = [100 * (1 + 0.3 * (i % 12 / 6 - 1)) for i in range(24)]
-    values = [t + s + (i % 3) * 5 for i, (t, s) in enumerate(zip(trend, seasonal))]
+    values = [t + s + (i % 3) * 5 for i, (t, s) in enumerate(zip(trend, seasonal, strict=False))]
 
     return pd.DataFrame({
         "Date": dates,
@@ -100,7 +99,7 @@ def sample_rfm_data() -> pd.DataFrame:
     Returns:
         DataFrame con CustomerID, TransactionDate, Amount.
     """
-    dates = pd.date_range("2023-01-01", periods=100, freq="H")
+    dates = pd.date_range("2023-01-01", periods=100, freq="h")
     customers = [f"CUST_{i % 25:03d}" for i in range(100)]
     amounts = [float(100 + (i * 7.3) % 500) for i in range(100)]
 
@@ -530,21 +529,21 @@ def sample_model_meta() -> dict[str, Any]:
 
 
 __all__ = [
-    "setup_test_env",
-    "sample_sales_data",
-    "sample_forecast_data",
-    "sample_rfm_data",
-    "sample_numeric_data",
+    "capture_logs",
+    "mock_semantic_model",
     "sample_classification_data",
-    "sample_quality_data",
     "sample_csv_file",
     "sample_excel_file",
-    "sample_parquet_file",
-    "mock_semantic_model",
-    "capture_logs",
+    "sample_forecast_data",
     "sample_model_dict",
+    "sample_model_meta",
+    "sample_numeric_data",
+    "sample_parquet_file",
     "sample_pbip_directory",
     "sample_pbip_file",
+    "sample_quality_data",
+    "sample_rfm_data",
+    "sample_sales_data",
     "sample_table_meta",
-    "sample_model_meta",
+    "setup_test_env",
 ]

@@ -6,9 +6,10 @@ compatibles con Model Context Protocol.
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7e56c2.svg)](https://modelcontextprotocol.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Commercial License](https://img.shields.io/badge/Commercial_License-Available-orange.svg)](COMMERCIAL_LICENSE.md)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![CI](https://github.com/jeyssonzerpa/powerbi-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/jeyssonzerpa/powerbi-mcp-server/actions/workflows/ci.yml)
+[![CI](https://github.com/jeyssonlza/powerbi-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/jeyssonlza/powerbi-mcp-server/actions/workflows/ci.yml)
 
 ## Estado Del Proyecto
 
@@ -353,12 +354,19 @@ python tests\smoke_e2e.py
 python -m pip check
 ```
 
-Resultado de referencia de la revision interna inicial:
+Resultado de referencia verificado (ejecución real con `pytest`):
 
-- `pytest`: 27 pruebas aprobadas.
-- Cobertura total: 34%.
-- `smoke_e2e`: aprobado.
+- `pytest`: **351 pruebas aprobadas**, 0 fallos.
+- Cobertura total real: **54%** (medida con `pytest --cov`, no estimada).
+- Dominios cubiertos: proyecto/sesión, modelo y DAX, IA/ML (anomalías,
+  clustering, forecasting, correlación, regresión, clasificación, árbol de
+  decisión, RFM), visuales HTML, calidad de datos, masking PII, cifrado,
+  Power BI REST API (mockeada) y autenticación OAuth2.
 - `pip check`: sin dependencias rotas.
+
+> Nota de transparencia: versiones previas de este README reportaban cifras de
+> cobertura no verificadas. Las cifras anteriores se sustituyeron por resultados
+> reales obtenidos ejecutando la suite completa.
 
 ## Desarrollo
 
@@ -391,4 +399,53 @@ privados. Si se publica manualmente desde la web de GitHub, no incluyas
 
 ## Licencia
 
-Distribuido bajo licencia MIT. Ver [LICENSE](LICENSE).
+Este proyecto usa un modelo de **Dual License**:
+
+| Uso | Licencia |
+|-----|----------|
+| Personal, educativo, open source (AGPL compatible) | ✅ **Gratis** — [AGPL v3](LICENSE) |
+| Comercial, SaaS, producto privado, enterprise | 💰 **Commercial License** — [Ver términos](COMMERCIAL_LICENSE.md) |
+
+### AGPL v3 — Uso libre
+Si usas este software en un proyecto open source compatible con AGPL,
+es completamente gratuito. Ver [LICENSE](LICENSE).
+
+### Commercial License — Uso empresarial
+Si integras este software en productos privados, SaaS o herramientas
+enterprise sin publicar tu código fuente, necesitas una licencia comercial.
+
+📧 **Contacto:** jeyssonzerpa@gmail.com
+📄 **Términos completos:** [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)
+
+---
+
+## Built With
+
+This project was designed and developed by **Jeysson Zerpa** using a
+multi-agent, multi-IDE workflow across several AI-assisted environments:
+
+| Tool | Role |
+|------|------|
+| **Claude (Anthropic)** | Architecture design, code generation, auditing, refactoring, DevOps |
+| **Cursor** | AI-assisted development and code completion |
+| **VS Code** | Primary code editor and workspace management |
+| **OpenCode** | AI terminal coding assistant |
+| **Antigravity** | AI development support |
+
+> All code, design decisions, and project direction were driven by
+> **Jeysson Zerpa**. AI tools were used as coding assistants under
+> his supervision and review.
+
+---
+
+## Disclaimer
+
+> **Power BI MCP Server is an independent open-source project and is NOT affiliated with,
+> endorsed by, or sponsored by Microsoft Corporation.**
+>
+> "Power BI" is a registered trademark of Microsoft Corporation. This project uses the
+> name solely to describe interoperability with Microsoft Power BI products.
+>
+> Use of the Power BI REST API is subject to
+> [Microsoft's Terms of Service](https://learn.microsoft.com/en-us/rest/api/power-bi/).
+> This tool does not redistribute any Microsoft software or proprietary code.

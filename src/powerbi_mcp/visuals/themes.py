@@ -111,7 +111,8 @@ def generate_palette_from_color(base_hex: str, *, count: int = 6) -> list[str]:
         raise ValidationError("count debe ser >= 1.", details={"count": count})
 
     r, g, b = _hex_to_rgb(base_hex)
-    h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+    # La luminosidad base se descarta: el bucle la recalcula con 'factor'.
+    h, _, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
 
     palette: list[str] = []
     # Distribuye la luminosidad de oscuro a claro manteniendo el tono.

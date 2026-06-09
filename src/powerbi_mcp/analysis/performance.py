@@ -108,9 +108,7 @@ def optimize_dax(expression: str) -> dict[str, Any]:
 
 def _is_false_positive(pattern: str, expression: str) -> bool:
     """Evita marcar DIVIDE como división insegura."""
-    if "/" in pattern and "DIVIDE" in expression.upper():
-        return True
-    return False
+    return "/" in pattern and "DIVIDE" in expression.upper()
 
 
 # ---------------------------------------------------------------------------

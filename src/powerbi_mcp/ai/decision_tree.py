@@ -13,7 +13,7 @@ por defecto.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 
@@ -76,7 +76,7 @@ def decision_tree_explain(
             {"feature": name, "importance": round(float(imp), 4)}
             for name, imp in zip(feature_names, importances, strict=False)
         ),
-        key=lambda r: float(r["importance"]),
+        key=lambda r: cast(float, r["importance"]),
         reverse=True,
     )
 

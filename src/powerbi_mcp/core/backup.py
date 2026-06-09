@@ -20,6 +20,7 @@ Ejemplo::
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shutil
@@ -393,10 +394,8 @@ class BackupManager:
                 shutil.copyfileobj(source, fh)
             os.replace(tmp_name, dest)
         except BaseException:
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_name)
-            except OSError:
-                pass
             raise
 
     def _find_backup_file(self, backup_id: str) -> Path | None:

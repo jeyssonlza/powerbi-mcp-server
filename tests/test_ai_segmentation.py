@@ -1,4 +1,9 @@
-"""Tests para RFM segmentation."""
+"""Tests para segmentación RFM (Recency, Frequency, Monetary).
+
+Valida el contrato real de ``rfm_segmentation`` -> ``AIResult`` con una fila por
+cliente que incluye ``recency``, ``frequency``, ``monetary``, sus puntuaciones
+(``R_score``, ``F_score``, ``M_score``) y el ``segment`` asignado.
+"""
 
 from __future__ import annotations
 
@@ -6,104 +11,112 @@ import pandas as pd
 import pytest
 
 from powerbi_mcp.ai.rfm import rfm_segmentation
+from powerbi_mcp.core.exceptions import ValidationError
 
 
 class TestRFMSegmentation:
-    """Suite de tests para RFM segmentation."""
+    """Suite de tests para segmentación RFM."""
 
-    def test_rfm_basic_segmentation(self, sample_rfm_data: pd.DataFrame) -> None:
-        """Debe segmentar clientes por RFM."""
+    def test_basic_segmentation(self, sample_rfm_data: pd.DataFrame) -> None:
+        """Debe producir una fila por cliente único."""
         result = rfm_segmentation(
             sample_rfm_data,
             customer_column="CustomerID",
             date_column="TransactionDate",
             amount_column="Amount",
         )
+        assert result.model_type == "rfm"
+        n_customers = sample_rfm_data["CustomerID"].nunique()
+        assert len(result.table) == n_customers
+        assert result.summary["customers"] == n_customers
 
-        assert result.ok
-        assert result.model_type == "rfm_segmentation"
-        assert result.segmentation is not None
-        assert len(result.segmentation) == len(sample_rfm_data["CustomerID"].unique())
-
-    def test_rfm_with_csv_input(self, tmp_path: Path) -> None:
-        """Debe aceptar ruta a archivo CSV."""
-        df = pd.DataFrame({
-            "CustID": ["C001", "C002", "C001", "C003", "C002"] * 4,
-            "TxDate": pd.date_range("2023-01-01", periods=20, freq="D"),
-            "TxAmount": [100 + i * 5 for i in range(20)],
-        })
-        csv_path = tmp_path / "rfm.csv"
-        df.to_csv(csv_path, index=False)
-
-        result = rfm_segmentation(
-            str(csv_path),
-            customer_column="CustID",
-            date_column="TxDate",
-            amount_column="TxAmount",
-        )
-
-        assert result.ok
-
-    def test_rfm_output_includes_metrics(self, sample_rfm_data: pd.DataFrame) -> None:
-        """El output debe incluir R, F, M por cliente."""
+    def test_rows_have_rfm_components(self, sample_rfm_data: pd.DataFrame) -> None:
+        """Cada cliente debe tener recency, frequency, monetary y scores."""
         result = rfm_segmentation(
             sample_rfm_data,
             customer_column="CustomerID",
             date_column="TransactionDate",
             amount_column="Amount",
         )
+        row = result.table[0]
+        for key in ("recency", "frequency", "monetary", "R_score", "F_score", "M_score", "segment"):
+            assert key in row
 
-        assert result.ok
-        result_dict = result.to_dict()
-        segmentation = result_dict.get("segmentation", {})
-        # Cada cliente debe tener R, F, M scores
-        for customer in segmentation.values():
-            assert "recency" in customer or "R" in customer
-            assert "frequency" in customer or "F" in customer
-            assert "monetary" in customer or "M" in customer
-
-    def test_rfm_identifies_top_customers(self, sample_rfm_data: pd.DataFrame) -> None:
-        """Debe identificar VIP vs otros segmentos."""
+    def test_scores_in_range(self, sample_rfm_data: pd.DataFrame) -> None:
+        """Las puntuaciones R/F/M deben estar entre 1 y 5."""
         result = rfm_segmentation(
             sample_rfm_data,
             customer_column="CustomerID",
             date_column="TransactionDate",
             amount_column="Amount",
         )
+        for row in result.table:
+            assert 1 <= row["R_score"] <= 5
+            assert 1 <= row["F_score"] <= 5
+            assert 1 <= row["M_score"] <= 5
 
-        assert result.ok
-        result_dict = result.to_dict()
-        # Debe haber información sobre segmentación
-        assert "segmentation" in result_dict or "clusters" in result_dict
+    def test_segment_distribution_in_summary(self, sample_rfm_data: pd.DataFrame) -> None:
+        """El summary debe incluir la distribución de segmentos."""
+        result = rfm_segmentation(
+            sample_rfm_data,
+            customer_column="CustomerID",
+            date_column="TransactionDate",
+            amount_column="Amount",
+        )
+        dist = result.summary["segment_distribution"]
+        assert sum(dist.values()) == result.summary["customers"]
 
-    def test_rfm_handles_multiple_transactions_per_customer(
-        self, sample_rfm_data: pd.DataFrame
-    ) -> None:
-        """Debe agregar transacciones múltiples por cliente."""
-        # Duplicar datos para tener múltiples transacciones
-        doubled = pd.concat([sample_rfm_data, sample_rfm_data])
+    def test_averages_in_summary(self, sample_rfm_data: pd.DataFrame) -> None:
+        """El summary debe reportar promedios de recency/frequency/monetary."""
+        result = rfm_segmentation(
+            sample_rfm_data,
+            customer_column="CustomerID",
+            date_column="TransactionDate",
+            amount_column="Amount",
+        )
+        assert "avg_recency" in result.summary
+        assert "avg_frequency" in result.summary
+        assert "avg_monetary" in result.summary
 
+    def test_aggregates_multiple_transactions(self, sample_rfm_data: pd.DataFrame) -> None:
+        """Duplicar transacciones no debe cambiar el número de clientes."""
+        doubled = pd.concat([sample_rfm_data, sample_rfm_data], ignore_index=True)
         result = rfm_segmentation(
             doubled,
             customer_column="CustomerID",
             date_column="TransactionDate",
             amount_column="Amount",
         )
+        assert len(result.table) == sample_rfm_data["CustomerID"].nunique()
 
-        assert result.ok
-        # Número único de clientes debe ser el mismo
-        assert len(result.segmentation) == len(sample_rfm_data["CustomerID"].unique())
+    def test_reference_date_override(self, sample_rfm_data: pd.DataFrame) -> None:
+        """Una fecha de referencia explícita debe reflejarse en el summary."""
+        result = rfm_segmentation(
+            sample_rfm_data,
+            customer_column="CustomerID",
+            date_column="TransactionDate",
+            amount_column="Amount",
+            reference_date="2024-01-01",
+        )
+        assert result.summary["reference_date"].startswith("2024-01-01")
 
-    def test_rfm_result_serialization(self, sample_rfm_data: pd.DataFrame) -> None:
-        """El resultado debe ser serializable."""
+    def test_missing_column_raises(self, sample_rfm_data: pd.DataFrame) -> None:
+        """Una columna inexistente debe lanzar ValidationError."""
+        with pytest.raises(ValidationError):
+            rfm_segmentation(
+                sample_rfm_data,
+                customer_column="NoExiste",
+                date_column="TransactionDate",
+                amount_column="Amount",
+            )
+
+    def test_result_serializable(self, sample_rfm_data: pd.DataFrame) -> None:
+        """El resultado debe serializarse a un diccionario."""
         result = rfm_segmentation(
             sample_rfm_data,
             customer_column="CustomerID",
             date_column="TransactionDate",
             amount_column="Amount",
         )
-
-        result_dict = result.to_dict()
-        assert isinstance(result_dict, dict)
-        assert "model_type" in result_dict
-        assert "segmentation" in result_dict
+        as_dict = result.to_dict()
+        assert as_dict["model_type"] == "rfm"

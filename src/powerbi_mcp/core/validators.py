@@ -234,14 +234,13 @@ def check_naming_convention(
                 suggestion=re.sub(r"^(tbl|dim|fact|fct)[_]?", "", name, flags=re.IGNORECASE),
             )
 
-    if kind == "measure":
-        if not _MEASURE_NAME_OK.match(name):
-            report.add(
-                "info",
-                rule_ns,
-                "Se recomienda iniciar la medida con mayúscula (Title/PascalCase).",
-                target=name,
-            )
+    if kind == "measure" and not _MEASURE_NAME_OK.match(name):
+        report.add(
+            "info",
+            rule_ns,
+            "Se recomienda iniciar la medida con mayúscula (Title/PascalCase).",
+            target=name,
+        )
 
     return report
 

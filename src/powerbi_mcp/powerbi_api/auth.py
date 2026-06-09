@@ -92,7 +92,7 @@ class PowerBIAuth:
                 token = data.get("token")
                 if token:
                     logger.debug("Token del caché reutilizado (expira en %.0f segundos).", expiry - time.time())
-                    return token
+                    return str(token)
         except (OSError, json.JSONDecodeError) as exc:
             logger.warning("Error al leer caché de tokens: %s", exc)
         return None

@@ -11,11 +11,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pytest
-
-from powerbi_mcp.docs.data_dictionary import build_data_dictionary, dictionary_to_markdown
-from powerbi_mcp.docs.generator import generate_documentation
-
 
 class TestMarkdownGeneration:
     """Suite de tests para generación de Markdown de tablas y medidas."""

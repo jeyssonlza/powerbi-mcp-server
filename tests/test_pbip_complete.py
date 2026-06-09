@@ -15,9 +15,7 @@ from typing import Any
 
 import pytest
 
-from powerbi_mcp.pbip.models import Column, Measure, SemanticModel, Table
-from powerbi_mcp.pbip.parser import build_file_tree, describe_table, list_tables
-from powerbi_mcp.pbip.pbix import convert_pbip_to_pbix, extract_pbix, pbix_info
+from powerbi_mcp.pbip.parser import build_file_tree
 from powerbi_mcp.pbip.writer import write_json_file, write_text_file
 
 
@@ -158,7 +156,7 @@ class TestPBIPXHandling:
             (sample_pbip_directory / "TestProject.SemanticModel" / "model.bim").read_text()
         )
         extracted_model = json.loads(
-            list(extract_dir.rglob("model.bim"))[0].read_text()
+            next(iter(extract_dir.rglob("model.bim"))).read_text()
         )
 
         assert original_model["name"] == extracted_model["name"]
@@ -170,9 +168,8 @@ class TestPBIPXHandling:
         bad_pbix.write_text("not a zip file", encoding="utf-8")
 
         assert not zipfile.is_zipfile(bad_pbix)
-        with pytest.raises(zipfile.BadZipFile):
-            with zipfile.ZipFile(bad_pbix, "r") as zf:
-                zf.namelist()
+        with pytest.raises(zipfile.BadZipFile), zipfile.ZipFile(bad_pbix, "r") as zf:
+            zf.namelist()
 
     def test_pbix_with_large_model(self, tmp_path: Path) -> None:
         """Debe manejar PBIX con modelo más grande."""
@@ -331,7 +328,7 @@ class TestPBIPWriter:
 
         new_data = {"version": 2, "updated": True}
 
-        result = write_json_file(
+        write_json_file(
             original_file,
             new_data,
             reason="update version",

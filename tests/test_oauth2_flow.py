@@ -17,7 +17,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import responses
@@ -25,7 +25,6 @@ import responses
 from powerbi_mcp.config import Settings
 from powerbi_mcp.core.exceptions import AuthenticationError
 from powerbi_mcp.powerbi_api.auth import PowerBIAuth
-
 
 # ============================================================================
 # FIXTURES PARA MOCKING
@@ -317,20 +316,15 @@ def test_timeout_exception_handling(mock_settings: Settings) -> None:
     """
     auth = PowerBIAuth(settings=mock_settings)
 
-    with patch("powerbi_mcp.powerbi_api.auth.requests.post") as mock_post:
-        import requests
+    # El módulo usa MSAL (no 'requests'). Simulamos un fallo de red en MSAL
+    # y verificamos que se traduce a AuthenticationError del dominio.
+    with patch("msal.ConfidentialClientApplication") as mock_app:
+        instance = MagicMock()
+        instance.acquire_token_for_client.side_effect = TimeoutError("Connection timed out")
+        mock_app.return_value = instance
 
-        mock_post.side_effect = requests.Timeout("Connection timed out")
-
-        # Dependiendo de la implementación, puede lanzar error o reintentar
-        # Aquí asumimos que lanza AuthenticationError tras agotar reintentos
-        try:
-            result = auth.get_token()
-            # Si no lanza, continuar
-            assert result is None or isinstance(result, str)
-        except (AuthenticationError, Exception):
-            # Timeout fue manejado
-            pass
+        with pytest.raises(AuthenticationError):
+            auth.acquire_token_service_principal()
 
 
 # ============================================================================
@@ -401,7 +395,7 @@ def test_full_oauth2_flow_with_msal_mock(
         status=200,
     )
 
-    auth = PowerBIAuth(settings=mock_settings)
+    PowerBIAuth(settings=mock_settings)
 
     # Intentar obtener token
     with patch("msal.ClientApplication") as mock_app:

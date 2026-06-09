@@ -21,15 +21,14 @@ from __future__ import annotations
 
 import json
 import os
-import psutil
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
+import psutil
 import pytest
-
 
 # ============================================================================
 # FIXTURES
@@ -72,7 +71,7 @@ def medium_dataset() -> pd.DataFrame:
         "id": range(100_000),
         "value": np.random.normal(100, 15, 100_000),
         "category": np.random.choice(["A", "B", "C"], 100_000),
-        "date": pd.date_range("2023-01-01", periods=100_000, freq="H"),
+        "date": pd.date_range("2023-01-01", periods=100_000, freq="h"),
     })
 
 
@@ -177,7 +176,7 @@ def test_memory_usage_medium_dataset(
         - Memoria razonable para dataset
         - No hay memory leaks
     """
-    mem_start = current_process.memory_info().rss / (1024 * 1024)
+    current_process.memory_info().rss / (1024 * 1024)
 
     # Procesar
     for _ in range(3):
@@ -342,7 +341,7 @@ class TestEnterpriseSLAs:
 
         # Simular operación simple
         data = {"name": "test", "tables": 10}
-        result = json.dumps(data)
+        json.dumps(data)
 
         elapsed = time.perf_counter() - start
 
@@ -362,7 +361,7 @@ class TestEnterpriseSLAs:
             "a": range(10000),
             "b": range(10000),
         })
-        result = df.groupby("a").sum()
+        df.groupby("a").sum()
 
         elapsed = time.perf_counter() - start
 
@@ -383,7 +382,7 @@ class TestEnterpriseSLAs:
         data = np.random.normal(100, 15, 50000)
         mean = np.mean(data)
         std = np.std(data)
-        outliers = data[np.abs(data - mean) > 3 * std]
+        data[np.abs(data - mean) > 3 * std]
 
         elapsed = time.perf_counter() - start
 
@@ -400,7 +399,7 @@ class TestEnterpriseSLAs:
 
         # Simular operación ultra-rápida
         text = "Email: user@example.com, SSN: 123-45-6789"
-        masked = text.replace("example.com", "***").replace("123-45-6789", "***")
+        text.replace("example.com", "***").replace("123-45-6789", "***")
 
         elapsed = time.perf_counter() - start
 

@@ -65,7 +65,7 @@ def train_regression(
     if len(X) < 10:
         raise ValidationError("Se requieren al menos 10 filas válidas.", details={"rows": len(X)})
 
-    metrics, importance, model = _fit(X, y, algorithm, test_size)
+    metrics, importance, _model = _fit(X, y, algorithm, test_size)
     importance_rows = sorted(importance, key=lambda r: abs(r["value"]), reverse=True)
 
     summary = {

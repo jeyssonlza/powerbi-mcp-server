@@ -107,3 +107,47 @@ output/
 # ---------------------------------------------------------------------------
 .ipynb_checkpoints/
 *.ipynb
+
+# ---------------------------------------------------------------------------
+# Claude Code internal files (never commit)
+# ---------------------------------------------------------------------------
+.claude/
+
+# ---------------------------------------------------------------------------
+# Local MCP client configs (machine-specific absolute paths — never commit)
+# ---------------------------------------------------------------------------
+.mcp.json
+.vscode/mcp.json
+opencode.json
+
+# ---------------------------------------------------------------------------
+# Temporary audit / session reports (not part of source code)
+# ---------------------------------------------------------------------------
+AUDIT_5_PASOS_RESUMEN.json
+AUDIT_README.md
+CHECKLIST_FINAL_PRODUCCION.txt
+COBERTURA_TESTS_2026.md
+COMPLETE_AUDIT_2026.md
+CRITICAL_5_EXECUTIVE_SUMMARY.txt
+CRITICAL_IMPLEMENTATION_CHECKLIST.md
+EFFECTIVENESS_DASHBOARD.md
+EJEMPLOS_NUEVAS_FEATURES.md
+EXECUTIVE_SUMMARY_AUDIT.json
+GUIA_INSTALACION.md
+HOW_TO_USE_AUDIT.md
+INDICE_AUDITORIA.txt
+INSTALLATION_GUIDE.md
+INSTRUCCIONES_TESTS_2026.md
+INVENTARIO_HERRAMIENTAS_MCP.md
+QUICK_PRODUCTION_GUIDE.txt
+QUICK_REFERENCE.txt
+QUICK_START_TESTS.md
+RESUMEN_EJECUTIVO_AUDITORIA.json
+RESUMEN_VISUAL_AUDITORIA.txt
+STATUS_5_PASOS.txt
+SUMMARY_COVERAGE_2026.txt
+TECHNICAL_EVALUATION_MATRIX.md
+TESTS_CREATED.md
+TESTS_IMPLEMENTATION_SUMMARY.md
+VALIDATION_COMMANDS.md
+VISUAL_SUMMARY_AUDIT.txt

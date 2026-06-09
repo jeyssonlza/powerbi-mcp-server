@@ -13,12 +13,9 @@ from __future__ import annotations
 
 import ast
 import re
-import subprocess
 from pathlib import Path
-from typing import Any
 
 import pytest
-
 
 # ============================================================================
 # FIXTURES PARA ANÁLISIS DE CÓDIGO
@@ -97,7 +94,7 @@ class TestNoRegressions:
         # Verificar que importan sin error (verificación básica)
         for test_file in test_files:
             try:
-                with open(test_file) as f:
+                with open(test_file, encoding="utf-8") as f:
                     compile(f.read(), str(test_file), "exec")
             except SyntaxError as e:
                 pytest.fail(f"Error de sintaxis en {test_file}: {e}")
@@ -159,12 +156,13 @@ class TestCodeQuality:
                 continue
 
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
-                    # Funciones públicas (no _privadas)
-                    if not node.name.startswith("_"):
-                        # Verificar docstring
-                        if not ast.get_docstring(node):
-                            missing_docstrings.append(f"{py_file.name}:def {node.name}")
+                # Funciones públicas (no _privadas) que carecen de docstring.
+                if (
+                    isinstance(node, ast.FunctionDef)
+                    and not node.name.startswith("_")
+                    and not ast.get_docstring(node)
+                ):
+                    missing_docstrings.append(f"{py_file.name}:def {node.name}")
 
         # Advertencia en lugar de fallo (no todos los tienen docstring)
         if missing_docstrings:
@@ -186,19 +184,20 @@ class TestCodeQuality:
         for py_file in all_python_files:
             content = py_file.read_text(encoding="utf-8")
             for i, line in enumerate(content.splitlines(), 1):
-                # Buscar type: ignore
+                # Un 'type: ignore' sin un comentario que lo justifique a continuación.
                 match = re.search(r"type:\s*ignore(?:\s*#.*)?", line)
-                if match:
-                    # Verificar si hay justificación (# after type: ignore)
-                    if "type: ignore  #" not in line and "type: ignore # " not in line:
-                        if "type: ignore" in line and "#" not in line.split("type: ignore")[1]:
-                            unjustified_ignores.append(
-                                f"{py_file.name}:{i}: {line.strip()}"
-                            )
+                if (
+                    match
+                    and "type: ignore  #" not in line
+                    and "type: ignore # " not in line
+                    and "type: ignore" in line
+                    and "#" not in line.split("type: ignore")[1]
+                ):
+                    unjustified_ignores.append(f"{py_file.name}:{i}: {line.strip()}")
 
         assert (
             len(unjustified_ignores) == 0
-        ), f"type: ignore sin justificación:\n" + "\n".join(unjustified_ignores[:5])
+        ), "type: ignore sin justificación:\n" + "\n".join(unjustified_ignores[:5])
 
     def test_imports_are_organized(self, all_python_files: list[Path]) -> None:
         """Imports deben estar organizados (stdlib, terceros, local).
@@ -252,12 +251,12 @@ class TestImportHealth:
         # Verificación simplificada: intentar importar módulos principales
         try:
             # Si los módulos se importan sin error, probablemente no hay ciclos severos
-            import powerbi_mcp  # noqa: F401
-            import powerbi_mcp.server  # noqa: F401
+            import powerbi_mcp
+            import powerbi_mcp.ai.clustering
+            import powerbi_mcp.pbip.parser
+            import powerbi_mcp.security.masking
+            import powerbi_mcp.server
             import powerbi_mcp.session  # noqa: F401
-            import powerbi_mcp.pbip.parser  # noqa: F401
-            import powerbi_mcp.ai.clustering  # noqa: F401
-            import powerbi_mcp.security.masking  # noqa: F401
 
             assert True  # Todos se importan sin error
         except ImportError as e:
@@ -399,9 +398,9 @@ class TestProjectConfiguration:
         - sample_pbip_directory
         """
         from tests.conftest import (
-            sample_sales_data,
             sample_numeric_data,
             sample_pbip_directory,
+            sample_sales_data,
         )
 
         assert sample_sales_data is not None

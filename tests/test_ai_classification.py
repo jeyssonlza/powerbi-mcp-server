@@ -1,148 +1,118 @@
-"""Tests para clasificación (Logistic, Random Forest)."""
+"""Tests para clasificación (Logistic, Random Forest).
+
+Valida el contrato real de ``train_classification`` -> ``AIResult`` cuyo
+``summary`` incluye ``metrics`` (``accuracy``, ``precision``, ``recall``,
+``f1``), ``confusion_matrix`` y ``classes``, y cuyo ``table`` es la importancia
+de variables.
+"""
 
 from __future__ import annotations
 
 import pandas as pd
 import pytest
 
-from powerbi_mcp.ai.classification import train_classification
+from powerbi_mcp.ai.classification import VALID_ALGORITHMS, train_classification
+from powerbi_mcp.core.exceptions import ValidationError
 
 
 class TestClassification:
     """Suite de tests para clasificación."""
 
-    def test_logistic_classification(self, sample_classification_data: pd.DataFrame) -> None:
-        """Logistic regression debe clasificar."""
+    def test_logistic_returns_metrics(self, sample_classification_data: pd.DataFrame) -> None:
+        """La regresión logística debe clasificar y reportar métricas."""
         result = train_classification(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             algorithm="logistic",
         )
-
-        assert result.ok
         assert result.model_type == "classification"
-        assert result.metrics is not None
+        metrics = result.summary["metrics"]
+        assert {"accuracy", "precision", "recall", "f1"} <= set(metrics)
 
-    def test_random_forest_classification(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Random Forest debe clasificar."""
-        result = train_classification(
-            sample_classification_data,
-            target_column="Class",
-            feature_columns=["Feature1", "Feature2", "Feature3"],
-            algorithm="random_forest",
-        )
-
-        assert result.ok
-
-    def test_classification_with_csv_input(self, tmp_path: Path) -> None:
-        """Debe aceptar ruta a CSV."""
-        df = pd.DataFrame({
-            "Feature1": [1, 2, 3, 4, 5] * 4,
-            "Feature2": [10, 20, 30, 40, 50] * 4,
-            "Target": ["A", "B", "A", "B", "A"] * 4,
-        })
-        csv_path = tmp_path / "clf.csv"
-        df.to_csv(csv_path, index=False)
-
-        result = train_classification(
-            str(csv_path),
-            target_column="Target",
-            feature_columns=["Feature1", "Feature2"],
-            algorithm="logistic",
-        )
-
-        assert result.ok
-
-    def test_classification_confusion_matrix(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """El resultado debe incluir matriz de confusión."""
+    def test_metrics_in_valid_range(self, sample_classification_data: pd.DataFrame) -> None:
+        """Las métricas deben estar entre 0 y 1."""
         result = train_classification(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             algorithm="random_forest",
         )
+        for key in ("accuracy", "precision", "recall", "f1"):
+            assert 0.0 <= result.summary["metrics"][key] <= 1.0
 
-        assert result.ok
-        result_dict = result.to_dict()
-        # Matriz de confusión para evaluación
-        assert "confusion_matrix" in result_dict or "metrics" in result_dict
-
-    def test_classification_accuracy_metric(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Debe reportar accuracy/precision/recall."""
+    def test_classes_detected(self, sample_classification_data: pd.DataFrame) -> None:
+        """Debe reportar las clases del objetivo (A y B)."""
         result = train_classification(
-            sample_classification_data,
-            target_column="Class",
-            feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
-            algorithm="logistic",
+            sample_classification_data, target_column="Class", algorithm="random_forest"
         )
+        assert set(result.summary["classes"]) == {"A", "B"}
 
-        assert result.ok
-        metrics = result.metrics
-        # Debe haber alguna métrica de exactitud
-        assert any(k in metrics for k in ["accuracy", "precision", "recall", "f1"])
+    def test_confusion_matrix_present(self, sample_classification_data: pd.DataFrame) -> None:
+        """El summary debe incluir una matriz de confusión cuadrada."""
+        result = train_classification(
+            sample_classification_data, target_column="Class", algorithm="random_forest"
+        )
+        cm = result.summary["confusion_matrix"]
+        assert len(cm) == len(cm[0])  # cuadrada
 
-    def test_classification_feature_importance(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Random Forest debe reportar feature importance."""
+    def test_feature_importance_table(self, sample_classification_data: pd.DataFrame) -> None:
+        """El table debe tener una fila de importancia por feature."""
         result = train_classification(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             algorithm="random_forest",
         )
+        assert result.columns == ["feature", "importance"]
+        assert len(result.table) == 4
 
-        assert result.ok
-        result_dict = result.to_dict()
-        # Feature importance
-        assert "feature_importance" in result_dict or "importance" in result_dict
-
-    def test_classification_auto_detect_features(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Debe autodetectar features."""
+    def test_auto_detect_features(self, sample_classification_data: pd.DataFrame) -> None:
+        """Sin feature_columns, debe usar las demás columnas."""
         result = train_classification(
-            sample_classification_data,
-            target_column="Class",
-            feature_columns=None,  # Auto
-            algorithm="logistic",
+            sample_classification_data, target_column="Class", algorithm="logistic"
         )
-
-        assert result.ok
+        assert result.summary["n_samples"] == len(sample_classification_data)
 
     @pytest.mark.parametrize("algorithm", ["logistic", "random_forest"])
     def test_all_algorithms_work(
         self, sample_classification_data: pd.DataFrame, algorithm: str
     ) -> None:
-        """Todos los algoritmos deben funcionar."""
+        """Ambos algoritmos deben funcionar."""
         result = train_classification(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2"],
             algorithm=algorithm,
         )
+        assert result.model_type == "classification"
 
-        assert result.ok
+    def test_invalid_algorithm_raises(self, sample_classification_data: pd.DataFrame) -> None:
+        """Un algoritmo no soportado debe lanzar ValidationError."""
+        with pytest.raises(ValidationError):
+            train_classification(
+                sample_classification_data, target_column="Class", algorithm="svm"
+            )
 
-    def test_classification_result_serialization(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """El resultado debe ser serializable."""
+    def test_single_class_raises(self) -> None:
+        """Un objetivo con una sola clase debe lanzar ValidationError."""
+        df = pd.DataFrame({
+            "Feature1": list(range(20)),
+            "Feature2": list(range(20, 40)),
+            "Class": ["A"] * 20,
+        })
+        with pytest.raises(ValidationError):
+            train_classification(df, target_column="Class", algorithm="logistic")
+
+    def test_result_serializable(self, sample_classification_data: pd.DataFrame) -> None:
+        """El resultado debe serializarse a un diccionario con métricas."""
         result = train_classification(
-            sample_classification_data,
-            target_column="Class",
-            feature_columns=["Feature1", "Feature2"],
-            algorithm="logistic",
+            sample_classification_data, target_column="Class", algorithm="logistic"
         )
+        as_dict = result.to_dict()
+        assert as_dict["model_type"] == "classification"
+        assert "metrics" in as_dict["metadata"]
 
-        result_dict = result.to_dict()
-        assert isinstance(result_dict, dict)
-        assert "model_type" in result_dict
-        assert "metrics" in result_dict
+    def test_valid_algorithms_constant(self) -> None:
+        """La constante VALID_ALGORITHMS debe contener los dos algoritmos."""
+        assert {"logistic", "random_forest"} == VALID_ALGORITHMS

@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Callable
 from typing import Any
 
 from powerbi_mcp.ai._base import to_dataframe

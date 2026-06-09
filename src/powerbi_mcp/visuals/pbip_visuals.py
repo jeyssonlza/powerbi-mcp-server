@@ -75,6 +75,7 @@ def make_field_ref(table: str, column: str, *, aggregation: str | None = None) -
     source_ref = {"Expression": {"SourceRef": {"Entity": table}}, "Property": column}
     query_ref = f"{table}.{column}"
 
+    field: dict[str, Any]
     if aggregation:
         agg_map = {"Sum": 0, "Avg": 1, "Average": 1, "Min": 3, "Max": 4, "Count": 2}
         function = agg_map.get(aggregation, 0)

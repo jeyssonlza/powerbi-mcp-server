@@ -1,521 +1,284 @@
 """Tests de integración end-to-end para las herramientas MCP.
 
 Cobertura:
-- Project Tools: crear, leer, listar proyectos, exportar PBIX, backup/restore
-- Model Tools: crear tablas, columnas, medidas, relaciones, validar DAX
-- AI Tools: detección de anomalías, clustering, forecasting, correlación, segmentación
-- Security Tools: enmascaramiento PII, encriptación, auditoría
+- Project: abrir, leer info, listar tablas, backup/restore (copia), export ZIP
+- Model: describir tablas, listar medidas y relaciones, validar DAX
+- AI: anomalías, clustering, correlación, segmentación RFM (contrato AIResult)
+- Security: enmascaramiento PII (mask_dataset) y cifrado de archivo (Encryptor)
 
-Cada test es independiente pero usa fixtures compartidas y sigue los patrones
-de integración real (sesión activa, modelos persistidos, validaciones).
+Usa la API real de cada módulo (sin funciones inventadas) y la sesión activa.
 """
 
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 
-from powerbi_mcp.pbip.models import SemanticModel
-from powerbi_mcp.pbip.parser import describe_table, list_measures, list_tables
+from powerbi_mcp.core.exceptions import PowerBIMCPError
+from powerbi_mcp.pbip.parser import describe_table, list_measures, list_relationships, list_tables
 from powerbi_mcp.session import session
 
-
 # ============================================================================
-# FIXTURES ESPECÍFICAS PARA INTEGRACIÓN
-# ============================================================================
-
-
-@pytest.fixture
-def active_project(sample_pbip_directory: Path) -> Path:
-    """Abre un proyecto y lo mantiene activo para toda la suite.
-
-    Args:
-        sample_pbip_directory: Estructura PBIP base.
-
-    Yields:
-        Ruta del proyecto abierto.
-    """
-    try:
-        session.open(str(sample_pbip_directory), load_report=True)
-        yield sample_pbip_directory
-    finally:
-        if session.is_open:
-            session.close()
-
-
-@pytest.fixture
-def sample_large_data() -> pd.DataFrame:
-    """Dataset de 1000 filas para tests de escalabilidad.
-
-    Returns:
-        DataFrame con 5 características numéricas.
-    """
-    import numpy as np
-
-    np.random.seed(42)
-    n_rows = 1000
-    return pd.DataFrame({
-        "feature1": np.random.normal(100, 15, n_rows),
-        "feature2": np.random.normal(200, 30, n_rows),
-        "feature3": np.random.normal(50, 10, n_rows),
-        "feature4": np.random.normal(150, 25, n_rows),
-        "feature5": np.random.normal(75, 12, n_rows),
-    })
-
-
-# ============================================================================
-# PROJECT TOOLS INTEGRATION TESTS (3 tests)
+# PROJECT TOOLS
 # ============================================================================
 
 
 class TestProjectToolsIntegration:
-    """Tests de herramientas de proyecto: crear → leer → listar → backup → restore."""
+    """Abrir → leer info → listar → backup/restore (copia) → export ZIP."""
 
-    def test_project_create_read_list_workflow(self, tmp_path: Path) -> None:
-        """Prueba flujo completo: crear proyecto → leer → listar.
-
-        Verifica:
-        - Crear nuevo proyecto PBIP
-        - Leer información del proyecto
-        - Listar tablas disponibles
-        """
+    def test_project_open_read_list_workflow(self, tmp_path: Path) -> None:
+        """Abrir un proyecto, leer su info y listar tablas."""
         project_root = tmp_path / "TestProject"
         project_root.mkdir()
-
-        # Crear estructura mínima PBIP
-        pbip_file = project_root / "TestProject.pbip"
-        pbip_content = {
-            "version": "1.0",
-            "semanticModelFolder": "TestProject.SemanticModel",
-            "reportFolder": "TestProject.Report",
-        }
-        pbip_file.write_text(json.dumps(pbip_content, indent=2), encoding="utf-8")
-
-        # Crear modelo semántico
+        (project_root / "TestProject.pbip").write_text(
+            json.dumps({"version": "1.0", "semanticModelFolder": "TestProject.SemanticModel"}),
+            encoding="utf-8",
+        )
         model_dir = project_root / "TestProject.SemanticModel"
         model_dir.mkdir()
-        model_bim = model_dir / "model.bim"
-        model_dict = {
-            "name": "TestModel",
-            "compatibilityLevel": 1550,
-            "version": "1.0.0",
-            "tables": [
-                {
-                    "name": "Table1",
-                    "columns": [{"name": "Col1", "dataType": "string"}],
-                    "measures": [],
-                    "partitions": [{"name": "Table1", "source": {"type": "m", "expression": "let x = 1"}}],
-                }
-            ],
-            "relationships": [],
-        }
-        model_bim.write_text(json.dumps(model_dict, indent=2), encoding="utf-8")
+        (model_dir / "model.bim").write_text(
+            json.dumps({
+                "name": "TestModel",
+                "tables": [{"name": "Table1", "columns": [{"name": "Col1", "dataType": "string"}], "measures": []}],
+            }),
+            encoding="utf-8",
+        )
 
-        # Crear reporte
-        report_dir = project_root / "TestProject.Report"
-        report_dir.mkdir()
-        report_json = report_dir / "report.json"
-        report_content = {"version": "1.0.0", "pages": []}
-        report_json.write_text(json.dumps(report_content, indent=2), encoding="utf-8")
-
-        # Abrir proyecto
         try:
-            project = session.open(str(project_root), load_report=True)
-            assert project is not None
+            project = session.open(str(project_root), load_report=False)
             assert project.name == "TestProject"
 
-            # Verificar lectura de información
             info = session.info()
-            assert info["is_open"] is True
-            assert info["project"]["name"] == "TestProject"
+            assert info["open"] is True
+            assert info["name"] == "TestProject"
 
-            # Verificar listado de tablas
             tables = list_tables(project)
             assert len(tables) > 0
             assert tables[0]["name"] == "Table1"
         finally:
             session.close()
 
-    def test_project_export_pbix_functionality(self, sample_pbip_directory: Path, tmp_path: Path) -> None:
-        """Prueba exportación de proyecto a formato PBIX.
-
-        Verifica:
-        - Conversión PBIP → PBIX
-        - Validar estructura ZIP
-        - Metadatos preservados
-        """
+    def test_project_export_to_pbix_zip(
+        self, sample_pbip_directory: Path, tmp_path: Path
+    ) -> None:
+        """Empaquetar el proyecto como ZIP (PBIX) preserva model.bim y .pbip."""
         import zipfile
 
         pbix_path = tmp_path / "exported.pbix"
-
-        # Simular conversión PBIP → PBIX (crear ZIP)
         with zipfile.ZipFile(pbix_path, "w", zipfile.ZIP_DEFLATED) as zf:
             for fpath in sample_pbip_directory.rglob("*"):
                 if fpath.is_file():
-                    arcname = fpath.relative_to(sample_pbip_directory.parent)
-                    zf.write(fpath, arcname)
+                    zf.write(fpath, fpath.relative_to(sample_pbip_directory.parent))
 
-        # Verificar que PBIX existe y es válido
-        assert pbix_path.exists()
         assert zipfile.is_zipfile(pbix_path)
-
-        # Verificar contenido
         with zipfile.ZipFile(pbix_path, "r") as zf:
             files = zf.namelist()
-            assert any(".pbip" in f for f in files), "Debe contener .pbip"
-            assert any("model.bim" in f for f in files), "Debe contener model.bim"
+            assert any(".pbip" in f for f in files)
+            assert any("model.bim" in f for f in files)
 
-    def test_project_backup_restore_cycle(self, sample_pbip_directory: Path, tmp_path: Path) -> None:
-        """Prueba ciclo completo: crear backup → restaurar → verificar.
-
-        Verifica:
-        - Crear backup de proyecto
-        - Restaurar desde backup
-        - Validar que contenido es idéntico
-        """
+    def test_project_backup_restore_cycle(
+        self, sample_pbip_directory: Path, tmp_path: Path
+    ) -> None:
+        """Copiar el proyecto y reabrirlo preserva el conteo de tablas/medidas."""
         import shutil
-        import time
 
         try:
-            # Abrir proyecto original
             project = session.open(str(sample_pbip_directory), load_report=True)
-            original_summary = project.summary()
+            original = project.summary()
 
-            # Crear backup (simulado: copiar carpeta)
             backup_dir = tmp_path / "backup_001"
             shutil.copytree(sample_pbip_directory, backup_dir)
-
-            # Hacer cambio menor
-            time.sleep(0.1)
-
-            # Restaurar desde backup
             session.close()
-            restored_dir = tmp_path / "restored"
-            shutil.copytree(backup_dir, restored_dir)
 
-            # Verificar que se restauró
-            restored_project = session.open(str(restored_dir), load_report=True)
-            restored_summary = restored_project.summary()
-
-            # Las estructuras deben ser equivalentes
-            assert restored_summary["table_count"] == original_summary["table_count"]
-            assert restored_summary["total_measures"] == original_summary["total_measures"]
+            restored = session.open(str(backup_dir), load_report=True).summary()
+            assert restored["tables"] == original["tables"]
+            assert restored["measures"] == original["measures"]
         finally:
             session.close()
 
 
 # ============================================================================
-# MODEL TOOLS INTEGRATION TESTS (3 tests)
+# MODEL TOOLS
 # ============================================================================
 
 
 class TestModelToolsIntegration:
-    """Tests de herramientas de modelo: tablas, columnas, medidas, relaciones."""
+    """Describir tablas, listar medidas y relaciones, validar DAX."""
 
-    def test_table_column_measure_workflow(self, sample_pbip_directory: Path) -> None:
-        """Prueba flujo: crear tabla → añadir columna → crear medida.
-
-        Verifica:
-        - Agregar tabla al modelo
-        - Agregar columna de datos
-        - Crear medida en tabla
-        - Persistencia y lectura
-        """
+    def test_describe_table_and_list_measures(self, sample_pbip_directory: Path) -> None:
+        """Describir una tabla existente y listar medidas del modelo."""
         try:
             project = session.open(str(sample_pbip_directory), load_report=True)
-            model = session.require_semantic_model()
-
-            # Obtener tablas antes
-            tables_before = list_tables(project)
-            initial_count = len(tables_before)
-
-            # Verificar que podemos describir tabla existente
-            table_desc = describe_table(project, tables_before[0]["name"])
-            assert table_desc is not None
-            assert "columns" in table_desc
-            assert "measures" in table_desc
-
-            # Verificar listado de medidas
-            measures = list_measures(project)
-            assert isinstance(measures, list)
-
+            tables = list_tables(project)
+            detail = describe_table(project, tables[0]["name"])
+            assert detail is not None
+            assert "columns" in detail
+            assert isinstance(list_measures(project), list)
         finally:
             session.close()
 
-    def test_relationship_creation_and_validation(self, sample_pbip_directory: Path) -> None:
-        """Prueba creación y validación de relaciones.
-
-        Verifica:
-        - Estructura de relaciones en modelo
-        - Validación de referencias (tablas/columnas válidas)
-        - Persistencia de cambios
-        """
+    def test_relationships_have_expected_shape(self, sample_pbip_directory: Path) -> None:
+        """Las relaciones deben exponer 'name', 'from' y 'to'."""
         try:
             project = session.open(str(sample_pbip_directory), load_report=True)
-            model = session.require_semantic_model()
-
-            # Obtener relaciones existentes
-            from powerbi_mcp.pbip.parser import list_relationships
-
             relationships = list_relationships(project)
             assert isinstance(relationships, list)
-
-            # Validar estructura de relaciones
             for rel in relationships:
-                assert "fromTable" in rel
-                assert "fromColumn" in rel
-                assert "toTable" in rel
-                assert "toColumn" in rel
+                assert "name" in rel
+                assert "from" in rel
+                assert "to" in rel
         finally:
             session.close()
 
-    def test_model_dax_validation(self, sample_pbip_directory: Path) -> None:
-        """Prueba validación de expresiones DAX.
-
-        Verifica:
-        - Validar DAX sintáxis
-        - Detectar errores en expresiones
-        - Validación de referencias de tabla/columna
-        """
+    def test_measures_have_non_empty_expressions(self, sample_pbip_directory: Path) -> None:
+        """Cada medida listada debe tener una expresión DAX no vacía."""
         try:
             project = session.open(str(sample_pbip_directory), load_report=True)
-            model = session.require_semantic_model()
-
-            # Obtener medidas para validar sus DAX
-            from powerbi_mcp.pbip.parser import list_measures
-
-            measures = list_measures(project)
-            assert isinstance(measures, list)
-
-            # Verificar que cada medida tiene expresión
-            for measure in measures:
+            for measure in list_measures(project):
                 if "expression" in measure:
                     assert isinstance(measure["expression"], str)
                     assert len(measure["expression"]) > 0
-
         finally:
             session.close()
 
 
 # ============================================================================
-# AI TOOLS INTEGRATION TESTS (2 tests)
+# AI TOOLS
 # ============================================================================
 
 
 class TestAIToolsIntegration:
-    """Tests de herramientas AI: anomalías, clustering, forecasting."""
+    """Anomalías → clustering, correlación → RFM (contrato AIResult real)."""
 
-    def test_anomaly_detection_clustering_workflow(self, sample_numeric_data: pd.DataFrame) -> None:
-        """Prueba flujo AI: detectar anomalías → clustering.
-
-        Verifica:
-        - Detección de anomalías en datos
-        - Clustering de puntos normales
-        - Metricas retornadas válidas
-        """
+    def test_anomaly_then_clustering(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Detectar anomalías y luego agrupar; ambos devuelven AIResult válido."""
         from powerbi_mcp.ai.anomaly import detect_anomalies
-        from powerbi_mcp.ai.clustering import cluster
+        from powerbi_mcp.ai.clustering import run_clustering
 
-        # Detectar anomalías
-        anomaly_result = detect_anomalies(sample_numeric_data)
-        assert anomaly_result is not None
-        assert "anomalies" in anomaly_result or "scores" in anomaly_result
+        anomaly = detect_anomalies(sample_numeric_data)
+        assert anomaly.model_type == "anomaly"
+        assert anomaly.summary["anomalies_detected"] >= 0
 
-        # Clustering en datos sin anomalías severas
-        cluster_result = cluster(sample_numeric_data, n_clusters=3)
-        assert cluster_result is not None
-        assert "clusters" in cluster_result or "labels" in cluster_result
+        clusters = run_clustering(sample_numeric_data, n_clusters=3)
+        assert clusters.model_type == "clustering"
+        assert clusters.summary["n_clusters"] == 3
 
-    def test_correlation_and_rfm_segmentation(self, sample_rfm_data: pd.DataFrame, sample_sales_data: pd.DataFrame) -> None:
-        """Prueba flujo AI: correlación → segmentación RFM.
+    def test_correlation_and_rfm(
+        self, sample_rfm_data: pd.DataFrame, sample_sales_data: pd.DataFrame
+    ) -> None:
+        """Correlación sobre ventas y segmentación RFM por cliente."""
+        from powerbi_mcp.ai.correlation import correlation_analysis
+        from powerbi_mcp.ai.rfm import rfm_segmentation
 
-        Verifica:
-        - Análisis de correlación entre columnas
-        - Segmentación RFM de clientes
-        - Metricas y scores retornados
-        """
-        from powerbi_mcp.ai.correlation import correlate_columns
-        from powerbi_mcp.ai.rfm import rfm_segment
+        corr = correlation_analysis(sample_sales_data)
+        assert corr.model_type == "correlation"
 
-        # Correlación
-        corr_result = correlate_columns(sample_sales_data)
-        assert corr_result is not None
-
-        # RFM (requiere CustomerID, TransactionDate, Amount)
-        rfm_result = rfm_segment(
+        rfm = rfm_segmentation(
             sample_rfm_data,
-            customer_col="CustomerID",
-            date_col="TransactionDate",
-            amount_col="Amount",
+            customer_column="CustomerID",
+            date_column="TransactionDate",
+            amount_column="Amount",
         )
-        assert rfm_result is not None
-        assert len(rfm_result) > 0
+        assert len(rfm.table) > 0
 
 
 # ============================================================================
-# SECURITY TOOLS INTEGRATION TESTS (2 tests)
+# SECURITY TOOLS
 # ============================================================================
 
 
 class TestSecurityToolsIntegration:
-    """Tests de herramientas de seguridad: masking, encriptación, auditoría."""
+    """Enmascaramiento PII (mask_dataset) y cifrado de archivo (Encryptor)."""
 
-    def test_pii_masking_and_encryption(self, sample_quality_data: pd.DataFrame, tmp_path: Path) -> None:
-        """Prueba flujo seguridad: enmascarar PII → encriptar archivo.
+    def test_pii_masking_and_file_encryption(
+        self, sample_quality_data: pd.DataFrame, tmp_path: Path
+    ) -> None:
+        """Enmascarar Email y cifrar el CSV resultante con una clave Fernet."""
+        from powerbi_mcp.security.encryption import Encryptor, generate_key
+        from powerbi_mcp.security.masking import mask_dataset
 
-        Verifica:
-        - Detección y enmascaramiento de campos PII
-        - Encriptación de archivo con datos sensibles
-        - Integridad del archivo encriptado
-        """
-        from powerbi_mcp.security.masking import mask_pii
-        from powerbi_mcp.security.encryption import encrypt_file
-
-        # Enmascarar datos sensibles
-        masked_df = mask_pii(sample_quality_data, pii_patterns={"Email"})
-        assert masked_df is not None
+        masked = mask_dataset(sample_quality_data, columns=["Email"], auto_detect=False)
+        masked_df = pd.DataFrame(masked["table"])
         assert len(masked_df) == len(sample_quality_data)
 
-        # Encriptar archivo con datos
         csv_path = tmp_path / "sensitive.csv"
         masked_df.to_csv(csv_path, index=False)
 
-        encrypted_path = tmp_path / "sensitive.csv.enc"
-        result = encrypt_file(str(csv_path), str(encrypted_path))
-        assert result is not None or encrypted_path.exists()
+        enc = Encryptor(key=generate_key())
+        encrypted_path = enc.encrypt_file(csv_path, tmp_path / "sensitive.csv.enc")
+        assert Path(encrypted_path).exists()
+        assert Path(encrypted_path).read_bytes() != csv_path.read_bytes()
 
-    def test_audit_log_creation_and_reading(self, tmp_path: Path) -> None:
-        """Prueba flujo auditoría: registrar acciones → leer log.
-
-        Verifica:
-        - Crear registro de auditoría
-        - Leer logs de auditoría
-        - Estructura y contenido válidos
-        """
+    def test_audit_action_does_not_raise(self) -> None:
+        """Registrar una acción de auditoría no debe lanzar excepción."""
         from powerbi_mcp.security.audit import audit
 
-        # Registrar acción de auditoría
         audit("test_action", target="test_object", status="success", details={"test": True})
-
-        # Verificar que se registró (la función retorna True si éxito)
-        # Los logs se guardan en el directorio de logs configurado
-        assert True  # Auditoría registrada sin error
 
 
 # ============================================================================
-# END-TO-END INTEGRATION SCENARIOS
+# END-TO-END SCENARIOS
 # ============================================================================
 
 
 class TestEndToEndScenarios:
-    """Tests de escenarios complejos que integran múltiples herramientas."""
+    """Escenarios que integran proyecto + análisis AI + auditoría."""
 
-    def test_complete_project_analysis_workflow(
+    def test_open_project_then_analyze(
         self, sample_pbip_directory: Path, sample_sales_data: pd.DataFrame
     ) -> None:
-        """Escenario: abrir proyecto → analizar modelo → generar insights.
+        """Abrir proyecto, explorar objetos y correr un análisis AI."""
+        from powerbi_mcp.ai.anomaly import detect_anomalies
 
-        Este test simula un flujo real completo de análisis.
-        """
         try:
-            # Abrir proyecto
             project = session.open(str(sample_pbip_directory), load_report=True)
-            assert project is not None
-
-            # Explorar estructura
-            info = session.info()
-            assert info["is_open"]
-
-            # Listar objetos
-            tables = list_tables(project)
-            measures = list_measures(project)
-            assert len(tables) > 0
-
-            # Analizar datos con AI
-            from powerbi_mcp.ai.anomaly import detect_anomalies
+            assert session.info()["open"] is True
+            assert len(list_tables(project)) > 0
 
             anomalies = detect_anomalies(sample_sales_data)
-            assert anomalies is not None
-
+            assert anomalies.model_type == "anomaly"
         finally:
             session.close()
 
-    def test_security_and_documentation_workflow(self, sample_pbip_directory: Path) -> None:
-        """Escenario: abrir proyecto → documentar → asegurar.
+    def test_documentation_and_audit_flow(self, sample_pbip_directory: Path) -> None:
+        """Listar objetos documentables y registrar auditoría."""
+        from powerbi_mcp.security.audit import audit
 
-        Verifica documentación y seguridad en un flujo integrado.
-        """
         try:
             project = session.open(str(sample_pbip_directory), load_report=True)
-
-            # Obtener documentación
             tables = list_tables(project)
             measures = list_measures(project)
-
-            # Validar que hay objetos documentables
-            assert len(tables) >= 0
-            assert len(measures) >= 0
-
-            # Registrar auditoría
-            from powerbi_mcp.security.audit import audit
-
             audit(
                 "documentation_review",
                 target=project.name,
                 status="success",
                 details={"tables": len(tables), "measures": len(measures)},
             )
-
         finally:
             session.close()
 
 
 # ============================================================================
-# UTILITY AND ERROR HANDLING TESTS
+# ERROR HANDLING
 # ============================================================================
 
 
 class TestIntegrationErrorHandling:
-    """Tests de manejo de errores en flujos de integración."""
+    """Manejo de errores en flujos de integración."""
 
-    def test_handle_missing_project_gracefully(self, tmp_path: Path) -> None:
-        """Debe manejar gracefully cuando proyecto no existe.
-
-        Verifica:
-        - Error adecuado si ruta no existe
-        - No corrompe estado de sesión
-        """
-        missing_path = tmp_path / "nonexistent_project"
-
-        # Intentar abrir proyecto que no existe
-        with pytest.raises(Exception):
-            session.open(str(missing_path))
-
-        # Sesión debe estar cerrada
+    def test_missing_project_raises_and_keeps_session_clean(self, tmp_path: Path) -> None:
+        """Abrir una ruta inexistente debe lanzar y no dejar sesión abierta."""
+        with pytest.raises(PowerBIMCPError):
+            session.open(str(tmp_path / "nonexistent_project"))
         assert not session.is_open
 
-    def test_handle_invalid_data_types_in_ai_tools(self) -> None:
-        """Debe manejar tipos de datos inválidos en herramientas AI.
+    def test_ai_tool_rejects_non_numeric_data(self) -> None:
+        """Clustering sobre datos de solo texto debe lanzar un error del dominio."""
+        from powerbi_mcp.ai.clustering import run_clustering
 
-        Verifica:
-        - Rechazar o convertir datos inválidos
-        - Mensaje de error claro
-        """
-        invalid_df = pd.DataFrame({"text": ["a", "b", "c"]})
-
-        # Intentar operación numérica en datos de texto
-        from powerbi_mcp.ai.clustering import cluster
-
-        result = cluster(invalid_df, n_clusters=2)
-        # Debe fallar gracefully o retornar error
-        assert result is None or "error" in str(result).lower()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        invalid_df = pd.DataFrame({"text": ["a", "b", "c", "d", "e"]})
+        with pytest.raises(PowerBIMCPError):
+            run_clustering(invalid_df, n_clusters=2)

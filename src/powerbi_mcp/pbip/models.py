@@ -29,8 +29,8 @@ try:
     from powerbi_mcp.types import CompatibilityLevel, DataType
 except ImportError:
     # Fallback si no está disponible
-    CompatibilityLevel = None  # type: ignore
-    DataType = None  # type: ignore
+    CompatibilityLevel = None  # type: ignore  # alias opcional ausente si types.py no se importa
+    DataType = None  # type: ignore  # alias opcional ausente si types.py no se importa
 
 
 class _PBIPModel(BaseModel):

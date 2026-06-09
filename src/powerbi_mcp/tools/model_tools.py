@@ -15,9 +15,10 @@ from typing import Any
 from powerbi_mcp.session import session
 
 
-def _tool(func):
+def _tool(func: Any) -> Any:
     """Decorador: captura errores del dominio y los devuelve estructurados."""
     import functools
+
     from powerbi_mcp.core.exceptions import PowerBIMCPError
     from powerbi_mcp.core.logger import get_logger
 
@@ -74,7 +75,7 @@ def _commit_model(
     return {"ok": True, "dry_run": dry_run, "save": save_result, **payload}
 
 
-def register_model_tools(mcp) -> None:
+def register_model_tools(mcp: Any) -> None:
     """Registra todas las herramientas del modelo en la instancia MCP."""
 
     # ========== EXPLORACIÓN ==========

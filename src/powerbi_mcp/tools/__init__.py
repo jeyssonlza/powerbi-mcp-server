@@ -23,12 +23,12 @@ from powerbi_mcp.tools.security_tools import register_security_tools
 from powerbi_mcp.tools.visuals_tools import register_visuals_tools
 
 __all__ = [
-    "register_project_tools",
-    "register_model_tools",
     "register_ai_tools",
-    "register_visuals_tools",
     "register_analysis_tools",
     "register_docs_tools",
-    "register_security_tools",
+    "register_model_tools",
     "register_pbi_api_tools",
+    "register_project_tools",
+    "register_security_tools",
+    "register_visuals_tools",
 ]

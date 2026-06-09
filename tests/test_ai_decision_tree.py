@@ -1,4 +1,9 @@
-"""Tests para decision trees (explicabilidad, feature importance)."""
+"""Tests para árboles de decisión explicativos (key influencers).
+
+Valida el contrato real de ``decision_tree_explain`` -> ``AIResult`` cuyo
+``summary`` incluye ``task``, ``score``, ``top_influencers`` y ``rules``, y cuyo
+``table`` es la importancia de variables.
+"""
 
 from __future__ import annotations
 
@@ -6,122 +11,93 @@ import pandas as pd
 import pytest
 
 from powerbi_mcp.ai.decision_tree import decision_tree_explain
+from powerbi_mcp.core.exceptions import ValidationError
 
 
 class TestDecisionTree:
-    """Suite de tests para decision trees."""
+    """Suite de tests para árboles de decisión."""
 
-    def test_basic_decision_tree(self, sample_classification_data: pd.DataFrame) -> None:
-        """Decision tree debe entrenar y explicar."""
+    def test_classification_task(self, sample_classification_data: pd.DataFrame) -> None:
+        """Con objetivo categórico debe resolver una tarea de clasificación."""
         result = decision_tree_explain(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             max_depth=3,
         )
-
-        assert result.ok
         assert result.model_type == "decision_tree"
-        assert result.feature_importance is not None
+        assert result.summary["task"] == "classification"
+        assert result.summary["score_metric"] == "accuracy"
 
-    def test_decision_tree_with_csv_input(self, tmp_path: Path) -> None:
-        """Debe aceptar ruta a CSV."""
-        df = pd.DataFrame({
-            "Feature1": [1, 2, 3, 4, 5] * 4,
-            "Feature2": [10, 20, 30, 40, 50] * 4,
-            "Target": ["A", "B", "A", "B", "A"] * 4,
-        })
-        csv_path = tmp_path / "tree.csv"
-        df.to_csv(csv_path, index=False)
-
-        result = decision_tree_explain(
-            str(csv_path),
-            target_column="Target",
-            feature_columns=["Feature1", "Feature2"],
-            max_depth=2,
-        )
-
-        assert result.ok
-
-    def test_decision_tree_feature_importance(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Debe reportar importancia de features."""
+    def test_feature_importance_table(self, sample_classification_data: pd.DataFrame) -> None:
+        """El table debe tener importancia por feature."""
         result = decision_tree_explain(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             max_depth=3,
         )
+        assert result.columns == ["feature", "importance"]
+        assert len(result.table) >= 1
 
-        assert result.ok
-        importance = result.feature_importance
-        # Cada feature debe tener un score
-        assert len(importance) > 0
-
-    def test_decision_tree_rules_generation(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Debe extraer reglas del árbol."""
+    def test_rules_generated(self, sample_classification_data: pd.DataFrame) -> None:
+        """El summary debe incluir reglas legibles del árbol."""
         result = decision_tree_explain(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2"],
             max_depth=2,
         )
+        assert isinstance(result.summary["rules"], list)
+        assert len(result.summary["rules"]) >= 1
 
-        assert result.ok
-        result_dict = result.to_dict()
-        # Debe tener reglas/paths
-        assert "rules" in result_dict or "paths" in result_dict or "tree" in result_dict
-
-    def test_decision_tree_auto_features(self, sample_classification_data: pd.DataFrame) -> None:
-        """Debe autodetectar features."""
+    def test_top_influencers_present(self, sample_classification_data: pd.DataFrame) -> None:
+        """El summary debe incluir los principales influenciadores."""
         result = decision_tree_explain(
             sample_classification_data,
             target_column="Class",
-            feature_columns=None,  # Auto
+            feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             max_depth=3,
         )
+        assert len(result.summary["top_influencers"]) <= 5
+        assert len(result.summary["top_influencers"]) >= 1
 
-        assert result.ok
-
-    def test_decision_tree_depth_parameter(
-        self, sample_classification_data: pd.DataFrame
-    ) -> None:
-        """Diferentes profundidades deben funcionar."""
-        for depth in [1, 2, 3, 5]:
-            result = decision_tree_explain(
-                sample_classification_data,
-                target_column="Class",
-                feature_columns=["Feature1", "Feature2", "Feature3"],
-                max_depth=depth,
-            )
-            assert result.ok
-
-    def test_decision_tree_numeric_target(self, sample_numeric_data: pd.DataFrame) -> None:
-        """Debe funcionar con targets numéricos (regresión)."""
+    def test_numeric_target_is_regression(self, sample_numeric_data: pd.DataFrame) -> None:
+        """Un objetivo numérico continuo debe resolverse como regresión."""
         result = decision_tree_explain(
             sample_numeric_data,
             target_column="Feature5",
             feature_columns=["Feature1", "Feature2", "Feature3", "Feature4"],
             max_depth=3,
         )
+        assert result.summary["task"] == "regression"
+        assert result.summary["score_metric"] == "r2"
 
-        assert result.ok
-
-    def test_decision_tree_result_serialization(
-        self, sample_classification_data: pd.DataFrame
+    @pytest.mark.parametrize("depth", [1, 2, 3, 5])
+    def test_different_depths(
+        self, sample_classification_data: pd.DataFrame, depth: int
     ) -> None:
-        """El resultado debe ser serializable."""
+        """Diferentes profundidades deben funcionar."""
+        result = decision_tree_explain(
+            sample_classification_data,
+            target_column="Class",
+            feature_columns=["Feature1", "Feature2", "Feature3"],
+            max_depth=depth,
+        )
+        assert result.summary["max_depth"] == depth
+
+    def test_missing_target_raises(self, sample_classification_data: pd.DataFrame) -> None:
+        """Una columna objetivo inexistente debe lanzar ValidationError."""
+        with pytest.raises(ValidationError):
+            decision_tree_explain(sample_classification_data, target_column="NoExiste")
+
+    def test_result_serializable(self, sample_classification_data: pd.DataFrame) -> None:
+        """El resultado debe serializarse a un diccionario."""
         result = decision_tree_explain(
             sample_classification_data,
             target_column="Class",
             feature_columns=["Feature1", "Feature2"],
             max_depth=2,
         )
-
-        result_dict = result.to_dict()
-        assert isinstance(result_dict, dict)
-        assert "model_type" in result_dict
-        assert "feature_importance" in result_dict
+        as_dict = result.to_dict()
+        assert as_dict["model_type"] == "decision_tree"

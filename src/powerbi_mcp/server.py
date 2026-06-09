@@ -67,7 +67,7 @@ def _tool(func: F) -> F:
                 "message": str(exc),
             }
 
-    return wrapper  # type: ignore[return-value]
+    return wrapper  # type: ignore[return-value]  # functools.wraps conserva la firma original
 
 
 def _audit_action(
@@ -178,4 +178,4 @@ def run(transport: Literal["stdio", "sse", "streamable-http"] = "stdio") -> None
     mcp.run(transport=transport)
 
 
-__all__ = ["mcp", "run", "_tool", "_audit_action", "_reload_after_write", "_commit_model"]
+__all__ = ["_audit_action", "_commit_model", "_reload_after_write", "_tool", "mcp", "run"]

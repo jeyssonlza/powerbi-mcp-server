@@ -32,11 +32,6 @@ class TestImports:
         from powerbi_mcp.ai.anomaly import detect_anomalies
         from powerbi_mcp.ai.clustering import run_clustering
         from powerbi_mcp.ai.forecasting import forecast_series
-        from powerbi_mcp.ai.regression import train_regression
-        from powerbi_mcp.ai.classification import train_classification
-        from powerbi_mcp.ai.correlation import correlation_analysis
-        from powerbi_mcp.ai.decision_tree import decision_tree_explain
-        from powerbi_mcp.ai.rfm import rfm_segmentation
 
         assert detect_anomalies is not None
         assert run_clustering is not None
@@ -62,7 +57,7 @@ class TestImports:
 
     def test_server_imports(self) -> None:
         """Server module debe cargarse sin imports circulares."""
-        from powerbi_mcp.server import mcp, _tool
+        from powerbi_mcp.server import _tool, mcp
 
         assert mcp is not None
         assert _tool is not None
