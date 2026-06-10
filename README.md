@@ -27,8 +27,8 @@ Power BI. El proyecto incluye desde su primera entrega:
 - Backups automaticos, restauracion, auditoria y cifrado Fernet opcional.
 - Integracion con Power BI Service mediante REST API.
 
-La revision tecnica interna del proyecto fue ejecutada y aprobada. El reporte
-formal esta disponible en [docs/REPORTE_AUDITORIA.md](docs/REPORTE_AUDITORIA.md).
+El proyecto se valida en CI con su suite de pruebas (`pytest`), `ruff` (lint) y
+`mypy` (tipado). Consulta la seccion **Calidad Y Pruebas**.
 
 ## Tabla De Contenidos
 
@@ -329,9 +329,6 @@ El proyecto fue disenado con controles de seguridad desde su version inicial:
 - Los secretos se cargan desde entorno o `.env`.
 - `.env`, backups, logs y binarios Power BI estan excluidos por `.gitignore`.
 
-Para ver el estado formal de revision, consulta
-[docs/REPORTE_AUDITORIA.md](docs/REPORTE_AUDITORIA.md).
-
 ## Calidad Y Pruebas
 
 La entrega inicial incluye pruebas unitarias y de comportamiento para las zonas
@@ -390,7 +387,6 @@ El repositorio incluye los archivos base para publicacion abierta:
 - Workflow de CI en `.github/workflows/ci.yml`.
 - Politica de seguridad en `SECURITY.md`.
 - Guia de contribucion en `CONTRIBUTING.md`.
-- Guia de publicacion en [docs/PUBLICACION_GITHUB.md](docs/PUBLICACION_GITHUB.md).
 
 Antes de publicar, revisa que no se suban secretos reales ni proyectos PBIX
 privados. Si se publica manualmente desde la web de GitHub, no incluyas

@@ -280,9 +280,3 @@ Solicita refresco del dataset X.
   sensible.
 - Consulta `get_audit_log` para validar trazabilidad.
 - Ejecuta `python -m pytest -q` tras cambios de codigo.
-
-## Reporte De Auditoria
-
-El proyecto incluye un reporte formal de revision tecnica interna en
-[REPORTE_AUDITORIA.md](REPORTE_AUDITORIA.md). Este documento resume alcance,
-controles revisados, evidencias, riesgos residuales y estado de aprobacion.

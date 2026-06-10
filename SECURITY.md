@@ -37,9 +37,6 @@ The project includes controls for:
 - Secret loading through environment variables or `.env`.
 - `.gitignore` exclusions for local secrets, logs, backups and generated files.
 
-The audit report is available in
-[docs/REPORTE_AUDITORIA.md](docs/REPORTE_AUDITORIA.md).
-
 ## Important Notice
 
 The internal technical audit is not a replacement for legal review, compliance
