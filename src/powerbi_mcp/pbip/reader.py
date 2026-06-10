@@ -210,12 +210,23 @@ def _load_tmdl(tmdl_dir: Path) -> SemanticModel:
     """
     model = SemanticModel(format=ModelFormat.TMDL)
 
-    # model.tmdl (cultura, nombre, compatibilidad)
+    # model.tmdl (cultura y versión de origen de datos de Power BI)
     model_file = tmdl_dir / "model.tmdl"
     if model_file.exists():
         text = model_file.read_text(encoding="utf-8")
         if m := re.search(r"culture:\s*(\S+)", text):
             model.culture = m.group(1)
+        # defaultPowerBIDataSourceVersion (ej. powerBI_V3): debe preservarse al
+        # re-serializar a TMSL o Power BI rechaza una "degradación" de versión.
+        if m := re.search(r"defaultPowerBIDataSourceVersion:\s*(\S+)", text):
+            model.default_power_bi_data_source_version = m.group(1)
+
+    # database.tmdl (nivel de compatibilidad; no degradarlo al guardar)
+    db_file = tmdl_dir / "database.tmdl"
+    if db_file.exists() and (
+        m := re.search(r"compatibilityLevel:\s*(\d+)", db_file.read_text(encoding="utf-8"))
+    ):
+        model.compatibility_level = int(m.group(1))
 
     # Tablas
     tables_dir = tmdl_dir / "tables"
@@ -327,6 +338,9 @@ def _parse_tmdl_column(lines: list[str], i: int) -> tuple[Column, int]:
     source_column = None
     format_string = None
     is_hidden = False
+    # lineageTag: GUID que vincula la columna con los visuales del reporte.
+    # Debe preservarse o los visuales muestran "problema con uno o más campos".
+    lineage_tag = None
 
     # Propiedades a nivel >= 2.
     while i < len(lines):
@@ -345,10 +359,13 @@ def _parse_tmdl_column(lines: list[str], i: int) -> tuple[Column, int]:
             source_column = s.split(":", 1)[1].strip()
         elif s.startswith("formatString:"):
             format_string = s.split(":", 1)[1].strip()
+        elif s.startswith("lineageTag:"):
+            lineage_tag = s.split(":", 1)[1].strip()
         elif s == "isHidden" or s.startswith("isHidden:"):
             is_hidden = True
         i += 1
 
+    extra: dict[str, Any] = {"lineageTag": lineage_tag} if lineage_tag else {}
     return (
         Column(
             name=name,
@@ -358,6 +375,7 @@ def _parse_tmdl_column(lines: list[str], i: int) -> tuple[Column, int]:
             formatString=format_string,
             isHidden=is_hidden,
             expression=expression if is_calculated else None,
+            **extra,
         ),
         i,
     )
@@ -372,6 +390,7 @@ def _parse_tmdl_measure(lines: list[str], i: int) -> tuple[Measure, int]:
     format_string = None
     display_folder = None
     description = None
+    lineage_tag = None  # preserva el vínculo con los visuales (ver columnas).
 
     while i < len(lines):
         line = lines[i]
@@ -385,10 +404,13 @@ def _parse_tmdl_measure(lines: list[str], i: int) -> tuple[Measure, int]:
             format_string = s.split(":", 1)[1].strip()
         elif s.startswith("displayFolder:"):
             display_folder = s.split(":", 1)[1].strip()
+        elif s.startswith("lineageTag:"):
+            lineage_tag = s.split(":", 1)[1].strip()
         elif s.startswith("///"):
             description = s.lstrip("/ ").strip()
         i += 1
 
+    extra: dict[str, Any] = {"lineageTag": lineage_tag} if lineage_tag else {}
     return (
         Measure(
             name=name,
@@ -396,13 +418,19 @@ def _parse_tmdl_measure(lines: list[str], i: int) -> tuple[Measure, int]:
             formatString=format_string,
             displayFolder=display_folder,
             description=description,
+            **extra,
         ),
         i,
     )
 
 
 def _parse_tmdl_partition(lines: list[str], i: int) -> tuple[Partition, int]:
-    """Parsea una partición TMDL detectando el tipo de origen (m/calculated/...)."""
+    """Parsea una partición TMDL: tipo de origen, ``mode`` y ``expression``.
+
+    Captura el cuerpo (``mode:`` y ``source = ...``) para que la partición pueda
+    re-serializarse a TMSL sin perder la expresión M/DAX (clave para tablas
+    calculadas como Calendario o las tablas de fecha auto-generadas).
+    """
     header = lines[i].strip()[len("partition "):]
     name = _strip_tmdl_name(header)
     source_type = "m"
@@ -412,14 +440,26 @@ def _parse_tmdl_partition(lines: list[str], i: int) -> tuple[Partition, int]:
         source_type = after_eq.split()[0]
 
     i += 1
-    # Saltar el cuerpo de la partición (nivel >= 2) sin interpretarlo.
+    mode: str | None = None
+    expression: str | None = None
     while i < len(lines):
         line = lines[i]
         if line.strip() and _indent_level(line) <= 1:
             break
-        i += 1
+        s = line.strip()
+        if s.startswith("mode:"):
+            mode = s.split(":", 1)[1].strip()
+            i += 1
+        elif s.startswith("source ="):
+            # 'source = <expr>' (en línea, bloque o fence); reusa el helper.
+            expression, i = _consume_expression_if_any(lines, i, s)
+        else:
+            i += 1
 
-    return Partition(name=name, source={"type": source_type}), i
+    source: dict[str, Any] = {"type": source_type}
+    if expression:
+        source["expression"] = expression
+    return Partition(name=name, mode=mode, source=source), i
 
 
 def _consume_expression_if_any(lines: list[str], i: int, header: str) -> tuple[str | None, int]:

@@ -15,8 +15,15 @@ from typing import Any
 
 import pytest
 
+from powerbi_mcp.pbip.models import ModelFormat
 from powerbi_mcp.pbip.parser import build_file_tree
-from powerbi_mcp.pbip.writer import write_json_file, write_text_file
+from powerbi_mcp.pbip.reader import load_project
+from powerbi_mcp.pbip.writer import (
+    save_semantic_model,
+    serialize_model_to_tmsl,
+    write_json_file,
+    write_text_file,
+)
 
 
 class TestPBIPModelsParser:
@@ -422,3 +429,162 @@ class TestPBIPParserFunctions:
         # No debe incluir niveles más profundos
         if "truncated" in tree:
             assert tree.get("truncated") is False or tree.get("depth", 0) <= 2
+
+
+def _make_tmdl_project(root: Path) -> Path:
+    """Construye en disco un PBIP TMDL mínimo pero realista.
+
+    Incluye: compatibilityLevel 1600, defaultPowerBIDataSourceVersion powerBI_V3,
+    una tabla de datos con medida y ``lineageTag``, y una tabla calculada
+    (partición ``calculated`` con expresión DAX y columna calculada). Es el tipo
+    de proyecto que el writer rompía antes (ver los 5 bugs).
+    """
+    sm = root / "Demo.SemanticModel"
+    defn = sm / "definition"
+    (defn / "tables").mkdir(parents=True)
+    (sm / "definition.pbism").write_text('{"version":"4.0"}', encoding="utf-8")
+    (defn / "database.tmdl").write_text(
+        "database\n\tcompatibilityLevel: 1600\n", encoding="utf-8"
+    )
+    (defn / "model.tmdl").write_text(
+        "model Model\n\tculture: es-ES\n"
+        "\tdefaultPowerBIDataSourceVersion: powerBI_V3\n",
+        encoding="utf-8",
+    )
+    (defn / "tables" / "Sales.tmdl").write_text(
+        "table Sales\n"
+        "\tcolumn Amount\n"
+        "\t\tdataType: double\n"
+        "\t\tsourceColumn: Amount\n"
+        "\t\tlineageTag: col-amount-0001\n"
+        "\tmeasure Total = SUM(Sales[Amount])\n"
+        "\t\tformatString: 0.00\n"
+        "\t\tlineageTag: meas-total-0002\n"
+        "\tpartition Sales = m\n"
+        "\t\tmode: import\n"
+        "\t\tsource = let Source = 1 in Source\n",
+        encoding="utf-8",
+    )
+    (defn / "tables" / "Calendario.tmdl").write_text(
+        "table Calendario\n"
+        "\tcolumn Date\n"
+        "\t\tdataType: dateTime\n"
+        "\t\tsourceColumn: [Date]\n"
+        "\tcolumn Year = YEAR(Calendario[Date])\n"
+        "\t\tdataType: int64\n"
+        "\tpartition Calendario = calculated\n"
+        "\t\tmode: import\n"
+        "\t\tsource = CALENDAR(DATE(2020,1,1), DATE(2025,12,31))\n",
+        encoding="utf-8",
+    )
+    return root
+
+
+class TestTMDLWriterRegression:
+    """Regresión de los 5 bugs que hacían que Power BI rechazara el proyecto.
+
+    Estos tests NO usan datos sintéticos abstractos: construyen un PBIP TMDL en
+    disco, lo leen con el reader real y validan la estructura TMSL que el writer
+    generaría, exactamente lo que abre Power BI Desktop.
+    """
+
+    def test_reader_detects_tmdl_and_metadata(self, tmp_path: Path) -> None:
+        """El reader debe reconocer TMDL y leer compat/versión del origen."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+
+        assert project.model_format == ModelFormat.TMDL
+        model = project.semantic_model
+        assert model is not None
+        # Bug 4: compatibilityLevel real (1600), no el 1550 por defecto.
+        assert model.compatibility_level == 1600
+        # Bug 5: versión del origen de datos preservada.
+        assert getattr(model, "default_power_bi_data_source_version", None) == "powerBI_V3"
+
+    def test_reader_parses_calculated_partition_expression(self, tmp_path: Path) -> None:
+        """Bug 3: la partición calculada debe conservar su expresión DAX."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+        model = project.semantic_model
+        assert model is not None
+
+        calendario = next(t for t in model.tables if t.name == "Calendario")
+        partition = calendario.partitions[0]
+        assert partition.source.get("type") == "calculated"
+        assert "CALENDAR" in (partition.source.get("expression") or "")
+
+    def test_tmsl_calculated_column_has_type(self, tmp_path: Path) -> None:
+        """Bug 2: las columnas calculadas deben serializarse con type=calculated."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+        assert project.semantic_model is not None
+        tmsl = serialize_model_to_tmsl(project.semantic_model)
+
+        calendario = next(
+            t for t in tmsl["model"]["tables"] if t["name"] == "Calendario"
+        )
+        year_col = next(c for c in calendario["columns"] if c["name"] == "Year")
+        assert year_col.get("type") == "calculated"
+        assert "expression" in year_col
+        # La columna de tabla calculada (sourceColumn "[Date]") lleva su propio tipo.
+        date_col = next(c for c in calendario["columns"] if c["name"] == "Date")
+        assert date_col.get("type") == "calculatedTableColumn"
+
+    def test_tmsl_preserves_compat_and_datasource_version(self, tmp_path: Path) -> None:
+        """Bugs 4 y 5: el TMSL no debe degradar compat ni versión del origen."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+        assert project.semantic_model is not None
+        tmsl = serialize_model_to_tmsl(project.semantic_model)
+
+        assert tmsl["compatibilityLevel"] == 1600
+        assert tmsl["model"].get("defaultPowerBIDataSourceVersion") == "powerBI_V3"
+
+    def test_tmsl_preserves_lineage_tags(self, tmp_path: Path) -> None:
+        """El lineageTag debe sobrevivir el round-trip (vínculo con visuales)."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+        assert project.semantic_model is not None
+        tmsl = serialize_model_to_tmsl(project.semantic_model)
+
+        sales = next(t for t in tmsl["model"]["tables"] if t["name"] == "Sales")
+        col = next(c for c in sales["columns"] if c["name"] == "Amount")
+        meas = next(m for m in sales["measures"] if m["name"] == "Total")
+        assert col.get("lineageTag") == "col-amount-0001"
+        assert meas.get("lineageTag") == "meas-total-0002"
+
+    def test_save_converts_tmdl_to_single_valid_format(self, tmp_path: Path) -> None:
+        """Bug 1: tras guardar no deben coexistir model.bim y definition/."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+
+        result = save_semantic_model(project, reason="test regresión")
+        assert result.get("converted_from_tmdl") is True
+
+        sm = tmp_path / "Demo.SemanticModel"
+        assert (sm / "model.bim").exists()
+        assert not (sm / "definition").exists()
+
+        # El model.bim resultante es JSON válido y estructuralmente correcto.
+        bim = json.loads((sm / "model.bim").read_text(encoding="utf-8"))
+        assert bim["compatibilityLevel"] == 1600
+        assert bim["model"].get("defaultPowerBIDataSourceVersion") == "powerBI_V3"
+
+    def test_save_backs_up_definition_before_removal(self, tmp_path: Path) -> None:
+        """La carpeta definition/ debe respaldarse antes de eliminarse."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+        save_semantic_model(project, reason="test backup")
+
+        backups = list((tmp_path / "backups").rglob("definition__*.zip"))
+        assert backups, "Debe existir un respaldo de definition/ restaurable"
+
+    def test_save_dry_run_keeps_definition(self, tmp_path: Path) -> None:
+        """En dry-run no debe tocarse el proyecto (ni convertir formato)."""
+        _make_tmdl_project(tmp_path)
+        project = load_project(str(tmp_path))
+        save_semantic_model(project, reason="dry", dry_run=True)
+
+        sm = tmp_path / "Demo.SemanticModel"
+        assert (sm / "definition").exists()
+        assert not (sm / "model.bim").exists()

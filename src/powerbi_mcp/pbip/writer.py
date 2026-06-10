@@ -11,9 +11,14 @@ Provee primitivas de bajo nivel (:func:`write_json_file`, :func:`write_text_file
 y operaciones de alto nivel (:func:`save_semantic_model`, :func:`save_report`).
 
 Sobre formatos:
-- El **modelo semántico** se regenera de forma fiable en **TMSL** (``model.bim``).
-  Para proyectos TMDL, las ediciones puntuales se realizan a nivel de texto en
-  los módulos de :mod:`powerbi_mcp.model`; la regeneración completa exporta TMSL.
+- El **modelo semántico** se regenera en **TMSL** (``model.bim``) con los ajustes
+  que Power BI exige: ``type: calculated`` en columnas calculadas, particiones
+  calculadas con su expresión, y sin degradar ``compatibilityLevel`` ni
+  ``defaultPowerBIDataSourceVersion``.
+- Si el proyecto venía en **TMDL** (carpeta ``definition/``), al guardar se
+  convierte a TMSL y se retira ``definition/`` (respaldada antes), porque Power BI
+  rechaza un proyecto que tenga ambos formatos a la vez. Los ``lineageTag`` se
+  preservan para no romper el vínculo de los visuales con medidas/columnas.
 """
 
 from __future__ import annotations
@@ -21,6 +26,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -135,11 +141,32 @@ def _atomic_write(target: Path, content: str) -> None:
 _MODEL_INTERNAL_FIELDS = {"format"}
 
 
+def _normalize_tmsl_table(table: dict[str, Any]) -> None:
+    """Corrige in situ una tabla TMSL para que Power BI la acepte.
+
+    - Marca como ``"type": "calculated"`` las columnas que tienen ``expression``
+      (sin ``sourceColumn``); de lo contrario Power BI rechaza "propiedad
+      expression no reconocida".
+    - Asegura que las particiones calculadas conserven ``source.type`` y
+      ``source.expression`` (no queden vacías).
+    """
+    for col in table.get("columns", []):
+        has_expr = bool(col.get("expression"))
+        src = col.get("sourceColumn")
+        if has_expr and not src and col.get("type") not in ("calculated", "calculatedTableColumn"):
+            col["type"] = "calculated"
+        # Columna de tabla calculada (viene de ADDCOLUMNS): sourceColumn "[X]".
+        elif src and str(src).startswith("[") and col.get("type") is None:
+            col["type"] = "calculatedTableColumn"
+
+
 def serialize_model_to_tmsl(model: SemanticModel) -> dict[str, Any]:
     """Convierte un :class:`SemanticModel` a la estructura TMSL (``model.bim``).
 
-    Preserva los campos extra capturados al leer (gracias a ``extra="allow"``)
-    y excluye los campos internos del MCP (como ``format``).
+    Preserva los campos extra capturados al leer (gracias a ``extra="allow"``),
+    excluye los internos del MCP (``format``) y corrige los detalles que Power BI
+    exige: ``type: calculated`` en columnas calculadas y la versión del origen de
+    datos (``defaultPowerBIDataSourceVersion``), que no debe degradarse.
 
     Args:
         model: Modelo semántico a serializar.
@@ -157,6 +184,12 @@ def serialize_model_to_tmsl(model: SemanticModel) -> dict[str, Any]:
     # ``name`` y ``compatibilityLevel`` viven en el nivel raíz del TMSL.
     name = model_body.pop("name", "Model")
     compatibility = model_body.pop("compatibilityLevel", model.compatibility_level)
+
+    # Columnas calculadas y particiones: ajustes que Power BI exige. La versión
+    # del origen de datos (``defaultPowerBIDataSourceVersion``) ya viaja en
+    # ``model_body`` por su alias, así Power BI no la "degrada".
+    for table in model_body.get("tables", []):
+        _normalize_tmsl_table(table)
 
     return {
         "name": name,
@@ -190,15 +223,23 @@ def save_semantic_model(
             details={"project": project.name},
         )
 
-    if project.model_format == ModelFormat.TMDL:
-        logger.warning(
-            "El proyecto está en TMDL; la regeneración completa se exporta a TMSL "
-            "(model.bim). Las ediciones puntuales conservan TMDL."
-        )
-
     tmsl = serialize_model_to_tmsl(project.semantic_model)
     bim_path = project.model_path / "model.bim"
-    return write_json_file(bim_path, tmsl, reason=reason, dry_run=dry_run)
+    result = write_json_file(bim_path, tmsl, reason=reason, dry_run=dry_run)
+
+    # Un proyecto NO puede tener TMSL (model.bim) y TMDL (definition/) a la vez:
+    # Power BI lo rechaza. Si el origen era TMDL, retiramos su carpeta definition/
+    # (respaldada antes) para dejar un único formato válido.
+    if project.model_format == ModelFormat.TMDL and not dry_run:
+        tmdl_dir = project.model_path / "definition"
+        if tmdl_dir.exists():
+            with contextlib.suppress(Exception):
+                auto_backup(tmdl_dir, reason=f"{reason} (TMDL->TMSL)")
+            shutil.rmtree(tmdl_dir, ignore_errors=True)
+            result["converted_from_tmdl"] = True
+            logger.info("Proyecto convertido de TMDL a TMSL (definition/ retirado).")
+
+    return result
 
 
 # ===========================================================================

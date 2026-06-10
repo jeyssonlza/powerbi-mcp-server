@@ -218,6 +218,9 @@ class SemanticModel(_PBIPModel):
         name: Nombre del modelo.
         compatibility_level: Nivel de compatibilidad TMSL.
         culture: Cultura/idioma por defecto (ej. ``es-ES``).
+        default_power_bi_data_source_version: Versión del origen de datos Power BI
+            (ej. ``powerBI_V3``). Power BI no permite degradarla, por eso se
+            preserva al re-serializar.
         tables: Tablas del modelo.
         relationships: Relaciones entre tablas.
         format: Formato detectado en disco (TMSL/TMDL).
@@ -226,6 +229,9 @@ class SemanticModel(_PBIPModel):
     name: str = "Model"
     compatibility_level: int = Field(default=1550, alias="compatibilityLevel")
     culture: str | None = None
+    default_power_bi_data_source_version: str | None = Field(
+        default=None, alias="defaultPowerBIDataSourceVersion"
+    )
     tables: list[Table] = Field(default_factory=list)
     relationships: list[Relationship] = Field(default_factory=list)
     format: ModelFormat = ModelFormat.TMSL
