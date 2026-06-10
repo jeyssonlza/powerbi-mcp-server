@@ -434,6 +434,17 @@ multi-agent, multi-IDE workflow across several AI-assisted environments:
 
 ---
 
+## Contacto
+
+¿Tienes preguntas, ideas o quieres contribuir al proyecto? Puedes escribirme:
+
+- 💬 **WhatsApp:** [+55 (35) 99888-9882](https://wa.me/5535998889882) — la vía más rápida
+- 🐛 **Issues:** [reporta bugs o sugiere mejoras](https://github.com/jeyssonlza/powerbi-mcp-server/issues)
+
+Para temas de seguridad, revisa primero [SECURITY.md](SECURITY.md).
+
+---
+
 ## Disclaimer
 
 > **Power BI MCP Server is an independent open-source project and is NOT affiliated with,
