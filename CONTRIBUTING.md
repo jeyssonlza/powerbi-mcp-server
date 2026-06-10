@@ -5,6 +5,21 @@ Thank you for considering a contribution to Power BI MCP Server.
 This project is designed to be safe, auditable and practical for Power BI
 automation. Contributions should preserve those goals.
 
+## How to Submit Changes
+
+You do **not** have write access to this repository, and that is by design. No
+change reaches `master` without the maintainer's review. All contributions go
+through a **fork and pull request**:
+
+1. **Fork** this repository to your own GitHub account.
+2. **Clone** your fork and create a branch: `git checkout -b my-improvement`.
+3. Make your changes and run the verification steps below.
+4. **Push** to your fork and open a **Pull Request** against `master` here.
+5. The maintainer reviews the PR and merges it only if it fits the project.
+
+The `master` branch is protected: it cannot be force-pushed or deleted, and
+changes are integrated only through reviewed pull requests.
+
 ## Development Setup
 
 ```powershell
