@@ -1,6 +1,6 @@
 """Módulos de herramientas MCP organizadas por dominio.
 
-Este paquete contiene 67 herramientas Power BI MCP divididas en 8 dominios:
+Este paquete contiene 66 herramientas Power BI MCP divididas en 8 dominios:
 - project_tools: 11 herramientas de gestión de proyectos PBIP/PBIX
 - model_tools: 23 herramientas del modelo semántico (tablas, columnas, medidas, relaciones)
 - ai_tools: 8 herramientas de Machine Learning e IA

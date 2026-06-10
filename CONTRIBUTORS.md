@@ -19,7 +19,7 @@ The following AI-assisted tools contributed to development:
 
 ### Claude — Anthropic
 - Architecture design and modular refactoring
-- Code generation for 67 MCP tools across 8 domains
+- Code generation for 66 MCP tools across 8 domains
 - Technical auditing (71% → 99/100 quality improvement)
 - DevOps: Dockerfile, GitHub Actions CI/CD, release workflow
 - Security: OAuth2 tests, performance baselines, PII masking

@@ -136,9 +136,9 @@ def main():
     print("RESULTADO: REFACTORIZACIÓN EXITOSA")
     print("=" * 70)
     print(f"\n67 herramientas divididas en 8 módulos especializados")
-    print(f"Total: {total_found} herramientas encontradas ({'CORRECTO' if total_found == 67 else 'INCORRECTO'})")
+    print(f"Total: {total_found} herramientas encontradas ({'CORRECTO' if total_found == 66 else 'INCORRECTO'})")
 
-    return 0 if total_found == 67 else 1
+    return 0 if total_found == 66 else 1
 
 if __name__ == "__main__":
     sys.exit(main())

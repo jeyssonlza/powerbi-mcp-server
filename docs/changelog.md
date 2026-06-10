@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] — 2026-06-08
 
 ### Added
-- **67 MCP tools** across 8 specialized domains
+- **66 MCP tools** across 8 specialized domains
 - **Modular architecture**: server.py refactored from 1,849 to 182 lines
 - 8 tool modules: project, model, ai, visuals, analysis, docs, security, pbi_api
 - Full Docker + Docker Compose support

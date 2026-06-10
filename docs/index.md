@@ -15,7 +15,7 @@
 
 ## What is Power BI MCP Server?
 
-The **Power BI MCP Server** gives AI assistants (Claude, GPT-4, etc.) direct, structured access to your Power BI projects through **67 specialized tools** organized in 8 domains.
+The **Power BI MCP Server** gives AI assistants (Claude, GPT-4, etc.) direct, structured access to your Power BI projects through **66 specialized tools** organized in 8 domains.
 
 Instead of copy-pasting DAX, you ask your AI:
 
@@ -25,7 +25,7 @@ Instead of copy-pasting DAX, you ask your AI:
 
 ---
 
-## 67 Tools across 8 Domains
+## 66 Tools across 8 Domains
 
 | Domain | Tools | Description |
 |--------|-------|-------------|

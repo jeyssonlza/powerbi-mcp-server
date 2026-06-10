@@ -3,7 +3,7 @@
   "name": "powerbi-mcp-server",
   "displayName": "Power BI MCP Server",
   "version": "0.1.0",
-  "description": "Professional MCP server for Power BI automation — 67 tools for PBIP/PBIX project management, semantic modeling, AI/ML analytics, visualization, documentation, security, and Power BI Service integration.",
+  "description": "Professional MCP server for Power BI automation — 66 tools for PBIP/PBIX project management, semantic modeling, AI/ML analytics, visualization, documentation, security, and Power BI Service integration.",
   "author": {
     "name": "Jeysson Zerpa",
     "email": "jeyssonzerpa@gmail.com",

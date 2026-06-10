@@ -7,7 +7,7 @@
 
 ## 📧 ANNOUNCEMENT TEMPLATE
 
-**Subject:** [New MCP Server] Power BI MCP Server — 67 tools for PBIP/PBIX automation
+**Subject:** [New MCP Server] Power BI MCP Server — 66 tools for PBIP/PBIX automation
 
 ---
 
@@ -18,7 +18,7 @@ that gives Claude (and other AI assistants) direct access to Power BI projects.
 
 ### 🚀 What it does
 
-**67 tools** across 8 domains enabling AI-powered Power BI automation:
+**66 tools** across 8 domains enabling AI-powered Power BI automation:
 
 | Domain | Tools | Examples |
 |--------|-------|---------|

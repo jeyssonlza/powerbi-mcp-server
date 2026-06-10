@@ -124,7 +124,7 @@ jobs:
             See [CHANGELOG.md](https://github.com/jeyssonzerpa/powerbi-mcp-server/blob/main/CHANGELOG.md) for full details.
 
             ---
-            **67 MCP Tools** for Power BI | PBIP & PBIX | AI/ML | Security | Docker-ready
+            **66 MCP Tools** for Power BI | PBIP & PBIX | AI/ML | Security | Docker-ready
           files: dist/*
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}

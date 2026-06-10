@@ -4,7 +4,7 @@
 # Build static:  mkdocs build
 # ===========================================================================
 site_name: Power BI MCP Server
-site_description: Professional MCP server for Power BI automation — 67 tools for PBIP/PBIX, AI/ML, Security, and Cloud integration
+site_description: Professional MCP server for Power BI automation — 66 tools for PBIP/PBIX, AI/ML, Security, and Cloud integration
 site_author: Jeysson Zerpa
 site_url: https://powerbi-mcp-server.readthedocs.io
 
