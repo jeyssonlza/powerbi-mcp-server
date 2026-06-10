@@ -17,18 +17,29 @@ coordinan entre sí — tú decides qué herramienta usar de cada uno y en qué 
 
 ---
 
-## 🎯 Quién hace qué (no competir, complementar)
+## 🎯 Quién hace qué (regla de escritura: cada MCP escribe solo donde es nativo)
 
 ```
-ETL / transformar fuentes      → Power BI Desktop (Power Query). Ningún MCP lo reemplaza.
-Medidas DAX validadas en vivo  → powerbi-modeling-mcp (ejecuta y verifica el resultado)
-Trace / rendimiento            → powerbi-modeling-mcp
-IA (anomalías/forecast/cluster)→ powerbi  (Microsoft NO lo tiene)
-Documentación / diccionario    → powerbi
-Seguridad / masking PII        → powerbi
-Calidad de datos / perfilado   → powerbi
-Visuales HTML / temas          → powerbi
+ETL / transformar fuentes          → Power BI Desktop (Power Query). Ningún MCP lo reemplaza.
+
+── MICROSOFT (powerbi-modeling-mcp) ───────────────────────────────────────────
+Estructura (tablas, columnas, rel.)→ powerbi-modeling-mcp  ← escribe en el modelo vivo (TOM/AMO)
+Medidas DAX persistidas            → powerbi-modeling-mcp  ← valida ejecutando, preserva lineageTag
+Trace / rendimiento                → powerbi-modeling-mcp
+Calculation groups / jerarquías    → powerbi-modeling-mcp
+
+── NUESTRO (powerbi) ───────────────────────────────────────────────────────────
+IA (anomalías/forecast/cluster/RFM)→ powerbi  (Microsoft NO lo tiene)
+Documentación / diccionario        → powerbi
+Seguridad / masking PII            → powerbi
+Calidad de datos / perfilado       → powerbi
+Visuales HTML / temas              → powerbi
+Lectura de modelo (describe_table) → powerbi  (para contexto del agente, no escribe)
 ```
+
+> **Regla de escritura del modelo:** el MCP propio NO persiste tablas ni medidas
+> en proyectos TMDL activos. La escritura del modelo semántico la hace **Microsoft**
+> (con el motor real), y luego nuestro MCP lee el resultado para análisis/visuales.
 
 ---
 
@@ -52,12 +63,12 @@ Visuales HTML / temas          → powerbi
 
 ### ▶ Crear una medida
 ```
-1. [powerbi]    describe_table            → ver columnas/tipos reales
-2.              escribir DAX              → DIVIDE, VAR, formato
-3. [powerbi]    validate_dax              → sintaxis + referencias
-4. [Microsoft]  ejecutar DAX (si en vivo) → verificar el resultado real
-5. [powerbi]    add_measure(strict=True)  → persistir con formato y descripción
-6. [powerbi]    get_changelog / documentar el cambio
+1. [powerbi]    describe_table                   → ver columnas/tipos reales
+2.              escribir DAX                     → DIVIDE, VAR, formato
+3. [powerbi]    validate_dax                     → sintaxis + referencias
+4. [Microsoft]  ejecutar DAX (Desktop abierto)  → verificar el resultado real
+5. [Microsoft]  add_measure / crear la medida   → persistir con motor real (preserva lineageTag)
+6. [powerbi]    generate_documentation           → documentar el cambio
 ```
 
 ### ▶ Analizar y mejorar un modelo
@@ -79,7 +90,24 @@ Visuales HTML / temas          → powerbi
 ```
 1. [powerbi]    open_project
 2. [powerbi]    detect_anomalies / forecast_series / run_clustering / rfm_segmentation
-3. [powerbi]    (opcional) integrar el resultado al modelo como tabla DAX o M
+3.              si el resultado necesita persistirse como tabla/medida:
+                → [Microsoft] crea la tabla/medida en el modelo vivo (Desktop abierto)
+                → [powerbi]   crea el visual HTML que consume el resultado
+```
+
+### ▶ Flujo recomendado para un proyecto nuevo
+```
+── Fase 1: Modelado (Desktop ABIERTO, nuestro MCP no escribe) ──
+1. Power Query  → cargar y transformar fuentes (ETL)
+2. [Microsoft]  → crear tablas, columnas y relaciones
+3. [Microsoft]  → crear medidas DAX (ejecutar y verificar)
+4.              Guardar y cerrar Power BI Desktop
+
+── Fase 2: Análisis y visuales (Desktop CERRADO, nuestro MCP lee) ──
+5. [powerbi]    open_project + describe_table    → contextualizar el modelo
+6. [powerbi]    analyze_data_quality / detect_anomalies / forecast_series
+7. [powerbi]    create_visual / create_dashboard / export_html_visual
+8. [powerbi]    generate_documentation
 ```
 
 ### ▶ Seguridad / datos sensibles
@@ -104,10 +132,12 @@ Visuales HTML / temas          → powerbi
 ## ⚡ Resumen de decisión rápida
 
 ```
-¿Power BI ABIERTO y quiero DAX validado ejecutando?  → Microsoft
-¿Power BI CERRADO y quiero analizar/documentar/asegurar? → powerbi (propio)
-¿IA, calidad, docs, seguridad, visuales?  → siempre powerbi (propio)
-¿Transformar fuentes (ETL real)?  → Power Query en Power BI Desktop
+¿Crear/modificar tabla, columna, relación o medida?  → Microsoft (escribe en motor vivo)
+¿Power BI ABIERTO y quiero ejecutar DAX real?         → Microsoft
+¿IA, anomalías, forecast, clustering, RFM?            → powerbi (propio, único que lo tiene)
+¿Calidad de datos, docs, seguridad, visuales, temas?  → powerbi (propio)
+¿Transformar fuentes (ETL)?                           → Power Query en Power BI Desktop
+¿Power BI CERRADO, quiero leer el modelo?             → powerbi (propio) — SOLO LEER
 ```
 
 > Cuando una tarea cruce ambos mundos, **orquesta en secuencia**: primero el que
