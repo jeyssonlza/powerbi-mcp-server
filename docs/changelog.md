@@ -34,4 +34,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | Security | 6 | security_mask_pii, security_hash_column, security_encrypt_file, security_decrypt_file, security_audit_log_read, security_backup_project |
 | Power BI API | 5 | pbi_list_workspaces, pbi_list_datasets, pbi_list_reports, pbi_execute_dax, pbi_refresh_dataset |
 
-[0.1.0]: https://github.com/jeyssonzerpa/powerbi-mcp-server/releases/tag/v0.1.0
+[0.1.0]: https://github.com/jeyssonlza/powerbi-mcp-server/releases/tag/v0.1.0

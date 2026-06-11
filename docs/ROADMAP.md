@@ -57,7 +57,7 @@ Objetivo: preparar el proyecto para entornos exigentes.
 
 ## Cómo Contribuir Al Roadmap
 
-1. Revisa los [issues abiertos](https://github.com/jeyssonzerpa/powerbi-mcp-server/issues).
+1. Revisa los [issues abiertos](https://github.com/jeyssonlza/powerbi-mcp-server/issues).
 2. Busca etiquetas `good first issue` o `help wanted`.
 3. Comenta en el issue antes de empezar a trabajar.
 4. Sigue la guía en [CONTRIBUTING.md](../CONTRIBUTING.md).

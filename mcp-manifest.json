@@ -7,14 +7,14 @@
   "author": {
     "name": "Jeysson Zerpa",
     "email": "jeyssonzerpa@gmail.com",
-    "url": "https://github.com/jeyssonzerpa"
+    "url": "https://github.com/jeyssonlza"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jeyssonzerpa/powerbi-mcp-server"
+    "url": "https://github.com/jeyssonlza/powerbi-mcp-server"
   },
-  "homepage": "https://powerbi-mcp-server.readthedocs.io",
-  "license": "MIT",
+  "homepage": "https://github.com/jeyssonlza/powerbi-mcp-server",
+  "license": "AGPL-3.0-or-later",
   "keywords": [
     "power-bi",
     "pbip",
@@ -43,7 +43,7 @@
     "command": "powerbi-mcp"
   },
   "docker": {
-    "image": "jeyssonzerpa/powerbi-mcp-server",
+    "image": "jeyssonlza/powerbi-mcp-server",
     "tag": "0.1.0",
     "compose": "docker-compose.yml"
   },
@@ -77,79 +77,76 @@
     ]
   },
   "tools": {
-    "total": 67,
+    "total": 66,
     "domains": [
       {
         "name": "project",
-        "count": 11,
-        "description": "PBIP/PBIX project lifecycle management",
+        "count": 10,
+        "description": "PBIP/PBIX project lifecycle: open, inspect, reload, close, backup, restore and PBIX conversion",
         "tools": [
-          "project_info", "project_structure", "project_create", "project_read",
-          "project_update_metadata", "project_list", "project_export_pbix",
-          "project_import_pbip", "project_backup", "project_restore_backup", "project_delete"
+          "open_project", "project_info", "project_structure", "reload_project", "close_project",
+          "list_backups", "create_backup", "restore_backup", "convert_to_pbix", "read_pbix_info"
         ]
       },
       {
         "name": "model",
-        "count": 23,
-        "description": "Semantic model: tables, columns, measures, relationships",
+        "count": 22,
+        "description": "Semantic model authoring: tables, columns, measures, relationships, DAX validation and schema classification",
         "tools": [
-          "table_create", "table_list", "table_read", "table_update", "table_delete",
-          "table_add_partition", "table_set_calculation_group",
-          "column_create", "column_list", "column_update", "column_delete", "column_add_format",
-          "measure_create", "measure_list", "measure_update", "measure_delete", "measure_validate_dax",
-          "relationship_create", "relationship_list", "relationship_update", "relationship_delete",
-          "model_info", "model_validate"
+          "list_tables", "describe_table", "list_measures", "list_relationships", "search_objects",
+          "add_table", "add_calculated_table", "rename_table", "delete_table",
+          "add_data_column", "add_calculated_column", "update_column", "delete_column",
+          "add_measure", "update_measure", "delete_measure", "validate_dax",
+          "add_relationship", "update_relationship", "delete_relationship", "diagnose_relationships",
+          "classify_schema"
         ]
       },
       {
         "name": "ai",
         "count": 8,
-        "description": "Machine learning and AI analytics",
+        "description": "AI/ML analytics: anomaly detection, clustering, forecasting, RFM segmentation, correlation and model training",
         "tools": [
-          "ai_detect_anomalies", "ai_clustering_kmeans", "ai_clustering_hierarchical",
-          "ai_forecasting_arima", "ai_forecasting_exponential",
-          "ai_segmentation_rfm", "ai_correlation_pearson", "ai_correlation_spearman"
+          "detect_anomalies", "run_clustering", "forecast_series", "rfm_segmentation",
+          "correlation_analysis", "decision_tree_explain", "train_regression", "train_classification"
         ]
       },
       {
         "name": "visuals",
         "count": 7,
-        "description": "Report pages, charts, and visual elements",
+        "description": "Report pages, visuals, dashboards, HTML export and theming",
         "tools": [
-          "visual_create_page", "visual_add_chart", "visual_add_table", "visual_add_matrix",
-          "visual_apply_theme", "visual_export_html", "visual_generate_report"
+          "list_pages", "create_page", "create_visual", "create_dashboard",
+          "export_html_visual", "list_color_palettes", "create_theme"
         ]
       },
       {
         "name": "analysis",
         "count": 5,
-        "description": "Data quality, profiling, and pattern detection",
+        "description": "Data quality, profiling, performance analysis, best practices and DAX optimization",
         "tools": [
-          "analysis_data_quality", "analysis_profile_data", "analysis_detect_patterns",
-          "analysis_performance_metrics", "analysis_suggest_optimizations"
+          "analyze_data_quality", "profile_data", "analyze_performance",
+          "run_best_practices", "optimize_dax"
         ]
       },
       {
         "name": "docs",
         "count": 3,
-        "description": "Automated documentation generation",
-        "tools": ["docs_generate_markdown", "docs_generate_html", "docs_generate_data_dictionary"]
+        "description": "Automated documentation, data dictionary and changelog generation",
+        "tools": ["generate_documentation", "generate_data_dictionary", "get_changelog"]
       },
       {
         "name": "security",
         "count": 6,
-        "description": "PII masking, encryption, audit logs, backups",
+        "description": "PII masking, surrogate keys, value encryption/decryption and audit logging",
         "tools": [
-          "security_mask_pii", "security_hash_column",
-          "security_encrypt_file", "security_decrypt_file",
-          "security_audit_log_read", "security_backup_project"
+          "mask_data", "generate_surrogate_keys", "encrypt_value", "decrypt_value",
+          "generate_encryption_key", "get_audit_log"
         ]
       },
       {
         "name": "pbi_api",
         "count": 5,
-        "description": "Power BI Service REST API integration",
+        "description": "Power BI Service REST API: workspaces, datasets, reports, DAX execution and dataset refresh",
         "tools": [
           "pbi_list_workspaces", "pbi_list_datasets", "pbi_list_reports",
           "pbi_execute_dax", "pbi_refresh_dataset"

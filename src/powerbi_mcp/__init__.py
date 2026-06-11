@@ -25,6 +25,6 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 __author__ = "Jeysson Zerpa"
-__license__ = "MIT"
+__license__ = "AGPL-3.0-or-later"
 
 __all__ = ["__author__", "__license__", "__version__"]

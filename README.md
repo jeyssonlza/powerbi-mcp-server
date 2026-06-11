@@ -1,8 +1,6 @@
 # Power BI MCP Server
 
-Servidor MCP profesional para leer, analizar, documentar y modificar proyectos
-Power BI en formato PBIP/PBIX mediante lenguaje natural desde clientes
-compatibles con Model Context Protocol.
+**A professional Model Context Protocol (MCP) server that lets AI assistants read, analyze, document, secure and modify Power BI projects (PBIP/PBIX) through natural language.**
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7e56c2.svg)](https://modelcontextprotocol.io/)
@@ -11,361 +9,276 @@ compatibles con Model Context Protocol.
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![CI](https://github.com/jeyssonlza/powerbi-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/jeyssonlza/powerbi-mcp-server/actions/workflows/ci.yml)
 
-## Estado Del Proyecto
+---
 
-Power BI MCP Server nace como una herramienta modular para equipos que trabajan
-con modelos semanticos, reportes, visuales, documentacion y automatizacion de
-Power BI. El proyecto incluye desde su primera entrega:
+## Executive Summary
 
-- Servidor MCP por transporte `stdio`.
-- Lectura y escritura segura de proyectos PBIP.
-- Exploracion y modificacion del modelo semantico.
-- Creacion de paginas, visuales y dashboards PBIR.
-- Analisis de calidad, rendimiento y buenas practicas.
-- Integracion de modelos de IA al modelo Power BI.
-- Documentacion tecnica, diccionario de datos y changelog por proyecto.
-- Backups automaticos, restauracion, auditoria y cifrado Fernet opcional.
-- Integracion con Power BI Service mediante REST API.
+**Power BI MCP Server** turns any MCP-compatible AI assistant (Claude, etc.) into a hands-on
+Power BI engineering co-pilot. Instead of manually editing dozens of JSON/TMDL/PBIR files,
+a BI developer describes the goal in plain language and the server executes it through **66
+controlled tools** spanning project management, semantic modeling, AI/ML analytics,
+visualization, documentation, security and Power BI Service integration.
 
-El proyecto se valida en CI con su suite de pruebas (`pytest`), `ruff` (lint) y
-`mypy` (tipado). Consulta la seccion **Calidad Y Pruebas**.
+It is built for **PBIP** projects — the text-based, version-control-friendly format — so that
+modeling, auditing and automation become reproducible engineering workflows rather than
+manual clicking. The codebase follows a modular `src` layout with Pydantic models, full type
+hints, domain exceptions, automated backups and an audited write path.
 
-## Tabla De Contenidos
+> This is **not** a read-only data connector. It is a toolkit to **automate, document, audit
+> and improve** Power BI projects with AI.
 
-- [Que Es](#que-es)
-- [Para Que Sirve](#para-que-sirve)
-- [Caracteristicas](#caracteristicas)
-- [Arquitectura](#arquitectura)
-- [Instalacion](#instalacion)
-- [Configuracion](#configuracion)
-- [Uso Rapido](#uso-rapido)
-- [Herramientas MCP](#herramientas-mcp)
-- [Seguridad Y Auditoria](#seguridad-y-auditoria)
-- [Calidad Y Pruebas](#calidad-y-pruebas)
-- [Desarrollo](#desarrollo)
-- [Publicacion En GitHub](#publicacion-en-github)
-- [Licencia](#licencia)
+## What Problem It Solves
 
-## Que Es
+BI teams lose hours on repetitive, error-prone manual work:
 
-Power BI MCP Server es un servidor Model Context Protocol que permite a
-asistentes de IA interactuar con proyectos Power BI usando herramientas
-controladas. En lugar de editar manualmente multiples archivos JSON/TMDL/PBIR,
-el usuario puede pedir acciones en lenguaje natural y el cliente MCP invoca las
-herramientas correspondientes del servidor.
+- Editing semantic models by hand across many TMDL/PBIR files.
+- Writing and validating DAX without a fast feedback loop.
+- Producing and maintaining technical documentation and data dictionaries.
+- Running ad-hoc analytics (anomalies, forecasting, segmentation) outside the model.
+- Keeping backups, audit trails and PII controls consistent.
 
-El servidor esta orientado principalmente a PBIP, porque este formato es mas
-adecuado para control de versiones, auditoria, revision tecnica y automatizacion
-que un archivo PBIX binario.
+This project collapses those tasks into natural-language requests backed by deterministic,
+tested tools — with automatic backups and an audit log so changes stay safe and traceable.
 
-## Para Que Sirve
+## Why MCP Matters for Power BI Automation
 
-Sirve para acelerar y estandarizar tareas comunes en proyectos Power BI:
+The **Model Context Protocol** is an open standard that lets AI assistants call external
+tools through a well-defined contract. For Power BI, that means:
 
-- Abrir proyectos PBIP y entender su estructura.
-- Listar tablas, columnas, medidas y relaciones.
-- Crear, actualizar o eliminar medidas DAX.
-- Crear tablas, columnas y relaciones del modelo semantico.
-- Validar expresiones DAX y sugerir buenas practicas.
-- Crear paginas y visuales PBIR.
-- Generar visuales HTML interactivos.
-- Ejecutar analisis de calidad de datos, perfilado y rendimiento.
-- Aplicar modelos de IA como anomalias, clustering, forecasting, RFM,
-  regresion, clasificacion, correlacion y arboles de decision.
-- Integrar resultados de IA como tablas calculadas DAX o consultas Power Query.
-- Generar documentacion tecnica y diccionarios de datos.
-- Crear backups automaticos y restaurarlos.
-- Consultar logs de auditoria.
-- Conectarse a Power BI Service para listar workspaces, datasets, reportes,
-  ejecutar DAX y solicitar refrescos.
+- **Natural language → real actions**: "validate this measure", "document the model",
+  "forecast sales" become concrete tool calls, not just chat.
+- **Reproducible & auditable**: every tool has typed inputs/outputs, backups and logging.
+- **Composable**: the same tools work from any MCP client (Claude Code, VS Code, OpenCode,
+  Codex, etc.), and can be orchestrated alongside other MCP servers.
 
-## Caracteristicas
+## Key Features
 
-### Gestion De Proyectos PBIP/PBIX
+- **Project lifecycle (10 tools)** — open/inspect PBIP projects, structure exploration,
+  automatic backups, restore, and PBIP→PBIX conversion (via `pbi-tools` when available).
+- **Semantic modeling (22 tools)** — tables, columns, measures, relationships; DAX
+  validation; relationship diagnostics (broken/ambiguous/bidirectional/isolated); star vs
+  snowflake schema classification.
+- **AI/ML analytics (8 tools)** — anomaly detection, clustering, time-series forecasting,
+  RFM segmentation, correlation matrices, explainable decision trees, regression and
+  classification — with optional integration of results back into the model.
+- **Visuals & reports (7 tools)** — PBIR pages and visuals, auto-layout dashboards,
+  interactive Plotly HTML exports, and Power BI themes.
+- **Analysis & docs (8 tools)** — data quality, profiling, static performance review, best
+  practices, technical documentation (Markdown/HTML), data dictionary and per-project
+  changelog.
+- **Security (6 tools)** — PII masking, deterministic HMAC surrogate keys, value
+  encryption/decryption and audit-log access.
+- **Power BI Service (5 tools)** — list workspaces/datasets/reports, execute DAX and trigger
+  dataset refreshes via the REST API.
 
-- Apertura de proyectos desde carpeta raiz o archivo `.pbip`.
-- Deteccion automatica de modelo semantico y reporte.
-- Lectura de modelos TMSL (`model.bim`) y TMDL basico.
-- Lectura de reportes PBIR.
-- Conversion PBIP a PBIX mediante `pbi-tools` cuando esta disponible.
-- Lectura de metadatos basicos de PBIX existentes.
+## Difference from Microsoft Power BI MCP
 
-### Modelado Semantico
+This project is **complementary** to Microsoft's official `powerbi-modeling-mcp`, not a
+replacement. The two operate on different surfaces and are best used together:
 
-- Operaciones sobre tablas, columnas, medidas y relaciones.
-- Validacion de nombres y expresiones DAX.
-- Diagnostico de relaciones rotas, ambiguas, bidireccionales o aisladas.
-- Clasificacion de esquema estrella, copo de nieve o indeterminado.
-- Persistencia segura con backup previo y escritura atomica.
+| Aspect | Microsoft `powerbi-modeling-mcp` | **This project (`powerbi`)** |
+|--------|----------------------------------|------------------------------|
+| Target | **Live model** in Power BI Desktop (TOM/AMO) | **PBIP/PBIX files on disk** |
+| Power BI state | Requires Desktop **open** | Works with Desktop **closed** |
+| Core strength | Writing the model, executing real DAX, calculation groups, performance trace | AI/ML, data quality, documentation, security/PII, HTML visuals |
+| Best for | Authoring and validating the semantic model against the live engine | Local/professional automation, analysis, governance and reporting |
 
-### Inteligencia Artificial
+A practical, respectful division of labor: **let Microsoft's engine write and validate the
+model in a live session, and use this server to analyze, document, secure and visualize the
+result.** This project focuses on local/professional automation of PBIP/PBIX projects,
+semantic-model analysis, technical documentation, DAX validation, visual generation, applied
+AI/ML, and auditing/governance for BI development workflows.
 
-- Deteccion de anomalias.
-- Clustering.
-- Forecasting de series temporales.
-- Segmentacion RFM.
-- Matriz de correlaciones.
-- Arbol de decision explicativo.
-- Regresion.
-- Clasificacion.
-- Integracion de resultados al modelo como DAX o Power Query M.
-
-### Visuales Y Reportes
-
-- Creacion de paginas PBIR.
-- Creacion de visuales nativos PBIR.
-- Creacion de dashboards con layout automatico.
-- Exportacion de visuales HTML interactivos con Plotly.
-- Generacion de temas Power BI.
-- Sincronizacion automatica de la sesion tras escribir paginas o visuales.
-
-### Analisis Y Documentacion
-
-- Analisis de calidad de datos.
-- Perfilado de datasets.
-- Analisis de rendimiento estatico.
-- Analizador de buenas practicas.
-- Documentacion tecnica en Markdown y HTML.
-- Diccionario de datos en Markdown, JSON o CSV.
-- Changelog automatico por proyecto Power BI.
-
-### Seguridad
-
-- Backups automaticos antes de escrituras.
-- Restauracion de backups de archivos y carpetas.
-- Backups cifrados opcionales con Fernet (`PBIMCP_BACKUP_ENCRYPT=true`).
-- Validacion segura de archivos ZIP antes de extraer.
-- Modo `dry_run` sin cambios persistentes ni residuos en memoria.
-- Enmascaramiento de PII.
-- Claves subrogadas deterministas con HMAC y salt.
-- Auditoria de operaciones relevantes.
-- Secretos por variables de entorno o `.env`.
-
-## Arquitectura
+## Architecture Overview
 
 ```text
 src/powerbi_mcp/
-|-- __init__.py
-|-- __main__.py
-|-- server.py
-|-- session.py
-|-- config.py
-|
-|-- core/
-|   |-- archive.py
-|   |-- backup.py
-|   |-- exceptions.py
-|   |-- logger.py
-|   `-- validators.py
-|
-|-- pbip/
-|   |-- models.py
-|   |-- reader.py
-|   |-- writer.py
-|   |-- parser.py
-|   `-- pbix.py
-|
-|-- model/
-|   |-- tables.py
-|   |-- columns.py
-|   |-- relationships.py
-|   |-- measures.py
-|   `-- dax_validator.py
-|
-|-- ai/
-|   |-- anomaly.py
-|   |-- clustering.py
-|   |-- forecasting.py
-|   |-- rfm.py
-|   |-- correlation.py
-|   |-- decision_tree.py
-|   |-- regression.py
-|   |-- classification.py
-|   `-- integration.py
-|
-|-- visuals/
-|   |-- builder.py
-|   |-- pbip_visuals.py
-|   |-- html_visuals.py
-|   |-- themes.py
-|   `-- pages.py
-|
-|-- analysis/
-|   |-- data_quality.py
-|   |-- profiling.py
-|   |-- performance.py
-|   `-- best_practices.py
-|
-|-- docs/
-|   |-- generator.py
-|   |-- data_dictionary.py
-|   `-- changelog.py
-|
-|-- security/
-|   |-- encryption.py
-|   |-- surrogate_keys.py
-|   |-- masking.py
-|   `-- audit.py
-|
-`-- powerbi_api/
-    |-- auth.py
-    `-- client.py
+├── server.py          # MCP server (stdio) + tool registration
+├── session.py         # active project session
+├── config.py          # settings (env / .env, PBIMCP_ prefix)
+│
+├── core/              # archive, backup, exceptions, logger, validators
+├── pbip/              # models, reader, writer, parser, pbix
+├── model/             # tables, columns, relationships, measures, dax_validator
+├── ai/                # anomaly, clustering, forecasting, rfm, correlation,
+│                      #   decision_tree, regression, classification, integration
+├── visuals/           # builder, pbip_visuals, html_visuals, themes, pages
+├── analysis/          # data_quality, profiling, performance, best_practices
+├── docs/              # generator, data_dictionary, changelog
+├── security/          # encryption, surrogate_keys, masking, audit
+├── powerbi_api/       # auth, client (Power BI REST API)
+└── tools/             # 8 MCP tool domains (project, model, ai, visuals,
+                       #   analysis, docs, security, pbi_api)
 ```
 
-## Instalacion
+Design: `src` layout, `pyproject.toml`, Pydantic models, `py.typed` typing, domain-specific
+exceptions, and functional package separation. Tool count is verifiable with
+[`scripts/count_tools.py`](scripts/count_tools.py).
 
-### Requisitos
+## MCP Tools (66)
 
-- Python 3.10 o superior.
-- `pip` actualizado.
-- Power BI Desktop o `pbi-tools` solo si se requiere conversion PBIP a PBIX.
+| Domain | Tools |
+|---|---|
+| **Project** (10) | `open_project`, `project_info`, `project_structure`, `reload_project`, `close_project`, `create_backup`, `list_backups`, `restore_backup`, `convert_to_pbix`, `read_pbix_info` |
+| **Model** (22) | `list_tables`, `describe_table`, `list_measures`, `list_relationships`, `search_objects`, `add_table`, `add_calculated_table`, `rename_table`, `delete_table`, `add_data_column`, `add_calculated_column`, `update_column`, `delete_column`, `add_measure`, `update_measure`, `delete_measure`, `validate_dax`, `add_relationship`, `update_relationship`, `delete_relationship`, `diagnose_relationships`, `classify_schema` |
+| **AI** (8) | `detect_anomalies`, `run_clustering`, `forecast_series`, `rfm_segmentation`, `correlation_analysis`, `decision_tree_explain`, `train_regression`, `train_classification` |
+| **Visuals** (7) | `list_pages`, `create_page`, `create_visual`, `create_dashboard`, `export_html_visual`, `list_color_palettes`, `create_theme` |
+| **Analysis** (5) | `analyze_data_quality`, `profile_data`, `analyze_performance`, `run_best_practices`, `optimize_dax` |
+| **Docs** (3) | `generate_documentation`, `generate_data_dictionary`, `get_changelog` |
+| **Security** (6) | `mask_data`, `generate_surrogate_keys`, `encrypt_value`, `decrypt_value`, `generate_encryption_key`, `get_audit_log` |
+| **Power BI Service** (5) | `pbi_list_workspaces`, `pbi_list_datasets`, `pbi_list_reports`, `pbi_execute_dax`, `pbi_refresh_dataset` |
 
-### Instalacion Automatizada En Windows
+> See [`examples/`](examples/) for end-to-end professional workflows.
 
+## Use Cases for BI Teams
+
+- **Model review & governance** — open a PBIP, diagnose relationships, classify the schema
+  and run best-practice checks before a release.
+- **DAX productivity** — draft, validate and document measures with immediate feedback.
+- **Living documentation** — auto-generate technical docs and a data dictionary that stay in
+  sync with the model, versioned in Git.
+- **Embedded analytics** — run forecasting/anomaly detection on project data and surface the
+  results as DAX calculated tables or Power Query.
+- **Data protection** — mask PII and generate deterministic surrogate keys for shareable
+  samples.
+- **Audit & safety** — every write is backed up and logged, supporting compliance reviews.
+
+## Example Prompts
+
+```text
+Open the PBIP project at C:\PowerBI\Sales and list its tables.
+```
+```text
+Validate this DAX measure and check best practices:
+CALCULATE([Total Sales], SAMEPERIODLASTYEAR(Date[Date]))
+```
+```text
+Create a page called "Executive Summary" with a column chart of
+Product[Name] by SUM(Sales[Amount]).
+```
+```text
+Detect anomalies in sales.csv on the Amount column and integrate the result
+as a DAX calculated table named SalesAnomalies.
+```
+```text
+Generate the technical documentation and data dictionary for this project.
+```
+
+## Demo Workflow
+
+A typical "analyze and document a project" session (Power BI Desktop closed):
+
+1. `open_project` → load the PBIP and read its model.
+2. `list_tables` + `describe_table` → understand the schema.
+3. `analyze_data_quality` + `diagnose_relationships` → spot issues.
+4. `forecast_series` / `detect_anomalies` → run AI on real data.
+5. `create_visual` / `export_html_visual` → build visuals from the results.
+6. `generate_documentation` + `generate_data_dictionary` → leave a record.
+
+Every step that writes to disk creates an automatic backup first.
+
+## Installation
+
+### Requirements
+- Python 3.10+
+- Up-to-date `pip`
+- Power BI Desktop or `pbi-tools` only if you need PBIP→PBIX conversion
+
+### Automated install (Windows)
 ```powershell
-.\install.ps1
-.\install.ps1 -Dev
+.\install.ps1          # runtime
+.\install.ps1 -Dev     # with dev dependencies
 ```
+The installer creates `.venv`, installs dependencies, generates `.env` from `.env.example`
+and verifies the server.
 
-El instalador crea `.venv`, instala dependencias, genera `.env` desde
-`.env.example` si no existe y verifica el servidor.
-
-### Instalacion Manual
-
+### Manual install
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-pip install -e .
-```
-
-Para desarrollo:
-
-```powershell
-pip install -e ".[dev]"
-```
-
-Verificacion:
-
-```powershell
+pip install -e .          # or:  pip install -e ".[dev]"
 python -m powerbi_mcp --version
 ```
 
-## Configuracion
+## Configuration
 
-La configuracion se carga desde variables de entorno o archivo `.env`, con
-prefijo `PBIMCP_`.
+Configuration loads from environment variables or an `.env` file, prefixed with `PBIMCP_`.
 
-Variables principales:
-
-| Variable | Uso |
+| Variable | Purpose |
 |---|---|
-| `PBIMCP_LOG_LEVEL` | Nivel de log (`INFO`, `DEBUG`, `WARNING`, etc.). |
-| `PBIMCP_LOG_DIR` | Carpeta de logs. |
-| `PBIMCP_BACKUP_ENABLED` | Activa o desactiva backups automaticos. |
-| `PBIMCP_BACKUP_DIR` | Carpeta de backups. |
-| `PBIMCP_BACKUP_MAX` | Maximo de backups por origen. |
-| `PBIMCP_BACKUP_ENCRYPT` | Cifra backups con Fernet si vale `true`. |
-| `PBIMCP_SECRET_KEY` | Clave Fernet para cifrado. |
-| `PBIMCP_SURROGATE_SALT` | Salt para claves subrogadas deterministas. |
-| `PBIMCP_AZURE_TENANT_ID` | Tenant de Azure AD. |
-| `PBIMCP_AZURE_CLIENT_ID` | Client ID de la app registrada. |
-| `PBIMCP_AZURE_CLIENT_SECRET` | Client Secret para service principal. |
+| `PBIMCP_LOG_LEVEL` | Log level (`INFO`, `DEBUG`, `WARNING`, …) |
+| `PBIMCP_LOG_DIR` | Log directory |
+| `PBIMCP_BACKUP_ENABLED` | Enable/disable automatic backups |
+| `PBIMCP_BACKUP_DIR` | Backup directory |
+| `PBIMCP_BACKUP_MAX` | Max backups per source |
+| `PBIMCP_BACKUP_ENCRYPT` | Encrypt backups with Fernet when `true` |
+| `PBIMCP_SECRET_KEY` | Fernet key for encryption |
+| `PBIMCP_SURROGATE_SALT` | Salt for deterministic surrogate keys |
+| `PBIMCP_AZURE_TENANT_ID` | Azure AD tenant |
+| `PBIMCP_AZURE_CLIENT_ID` | Registered app client ID |
+| `PBIMCP_AZURE_CLIENT_SECRET` | Client secret (service principal) |
 
-Los archivos de configuracion para clientes MCP estan en [clients/](clients/).
+Ready-to-use MCP client configs are in [clients/](clients/).
 
-## Uso Rapido
+## Security Notes
 
-Ejemplos de peticiones desde un cliente MCP:
+- Every relevant write performs an **automatic backup** first.
+- Restore validates the backup and supports files and folders.
+- ZIP/PBIX extraction validates internal paths before writing (zip-slip protection).
+- Writes are **atomic** where applicable.
+- `dry_run` mode previews changes without persisting or leaving session residue.
+- The **audit log** records model, project, visual, documentation, backup, restore and
+  Power BI API operations.
+- Secrets come from the environment or `.env`; `.env`, backups, logs and Power BI binaries
+  are excluded via `.gitignore`.
 
-```text
-Abre el proyecto PBIP en C:\PowerBI\Ventas y lista las tablas.
-```
+See [SECURITY.md](SECURITY.md) for the disclosure policy.
 
-```text
-Valida esta medida DAX y dime si cumple buenas practicas:
-CALCULATE([Total Ventas], SAMEPERIODLASTYEAR(Fecha[Date]))
-```
-
-```text
-Crea una pagina llamada Resumen Ejecutivo y agrega un grafico de columnas
-por Producto[Nombre] con la suma de Ventas[Importe].
-```
-
-```text
-Detecta anomalias en ventas.csv sobre la columna Importe e integra el resultado
-como tabla calculada DAX llamada AnomaliasVentas.
-```
-
-```text
-Genera la documentacion tecnica y el diccionario de datos del proyecto.
-```
-
-## Herramientas MCP
-
-| Dominio | Herramientas |
-|---|---|
-| Proyecto | `open_project`, `project_info`, `project_structure`, `reload_project`, `close_project`, `create_backup`, `list_backups`, `restore_backup`, `convert_to_pbix`, `read_pbix_info` |
-| Modelo | `list_tables`, `describe_table`, `list_measures`, `list_relationships`, `search_objects`, `add_table`, `add_calculated_table`, `rename_table`, `delete_table`, `add_data_column`, `add_calculated_column`, `update_column`, `delete_column`, `add_measure`, `update_measure`, `delete_measure`, `validate_dax`, `add_relationship`, `update_relationship`, `delete_relationship`, `diagnose_relationships`, `classify_schema` |
-| IA | `detect_anomalies`, `run_clustering`, `forecast_series`, `rfm_segmentation`, `correlation_analysis`, `decision_tree_explain`, `train_regression`, `train_classification` |
-| Visuales | `list_pages`, `create_page`, `create_visual`, `create_dashboard`, `export_html_visual`, `list_color_palettes`, `create_theme` |
-| Analisis | `analyze_data_quality`, `profile_data`, `analyze_performance`, `run_best_practices`, `optimize_dax` |
-| Documentacion | `generate_documentation`, `generate_data_dictionary`, `get_changelog` |
-| Seguridad | `mask_data`, `generate_surrogate_keys`, `encrypt_value`, `decrypt_value`, `generate_encryption_key`, `get_audit_log` |
-| Power BI Service | `pbi_list_workspaces`, `pbi_list_datasets`, `pbi_list_reports`, `pbi_execute_dax`, `pbi_refresh_dataset` |
-
-## Seguridad Y Auditoria
-
-El proyecto fue disenado con controles de seguridad desde su version inicial:
-
-- Toda escritura relevante usa backup automatico previo.
-- La restauracion valida el backup y admite archivos o carpetas.
-- La extraccion ZIP/PBIX valida rutas internas antes de escribir.
-- Las escrituras usan operacion atomica cuando aplica.
-- El modo `dry_run` genera previsualizacion sin persistir ni dejar cambios en la
-  sesion activa.
-- La auditoria registra operaciones de modelo, proyecto, visuales,
-  documentacion, backups, restore y llamadas Power BI API.
-- Los secretos se cargan desde entorno o `.env`.
-- `.env`, backups, logs y binarios Power BI estan excluidos por `.gitignore`.
-
-## Calidad Y Pruebas
-
-La entrega inicial incluye pruebas unitarias y de comportamiento para las zonas
-mas sensibles del servidor:
-
-- Validacion DAX.
-- Operaciones de modelo.
-- Backup y restore.
-- Backup cifrado.
-- Rechazo de ZIP/PBIX con rutas inseguras.
-- Estado de sesion con `dry_run`.
-- Sincronizacion de paginas creadas.
-- Smoke test end-to-end sobre un PBIP temporal.
-
-Comandos de verificacion:
+## Quality & Testing
 
 ```powershell
+python -m ruff check .
+python -m mypy src
 python -m pytest -q
-python tests\smoke_e2e.py
-python -m pip check
+python scripts\count_tools.py   # verify the tool count (66)
 ```
 
-Resultado de referencia verificado (ejecución real con `pytest`):
+Verified reference results (real execution, not estimated):
 
-- `pytest`: **351 pruebas aprobadas**, 0 fallos.
-- Cobertura total real: **54%** (medida con `pytest --cov`, no estimada).
-- Dominios cubiertos: proyecto/sesión, modelo y DAX, IA/ML (anomalías,
-  clustering, forecasting, correlación, regresión, clasificación, árbol de
-  decisión, RFM), visuales HTML, calidad de datos, masking PII, cifrado,
-  Power BI REST API (mockeada) y autenticación OAuth2.
-- `pip check`: sin dependencias rotas.
+- **362 automated tests** collected, covering project/session, model & DAX, AI/ML, HTML
+  visuals, data quality, PII masking, encryption, Power BI REST API (mocked) and OAuth2.
+- **~55% real coverage** (measured with `pytest --cov`).
+- `ruff` and `mypy`: clean. `pip check`: no broken dependencies.
+- A `tests/test_manifest_consistency.py` suite keeps `mcp-manifest.json` in sync with the
+  real registered tools.
 
-> Nota de transparencia: versiones previas de este README reportaban cifras de
-> cobertura no verificadas. Las cifras anteriores se sustituyeron por resultados
-> reales obtenidos ejecutando la suite completa.
+> **Transparency note:** earlier versions of this README reported unverified coverage
+> figures. They were replaced with real results from running the full suite.
 
-## Desarrollo
+## Roadmap
+
+- End-to-end validation of the model writer against Power BI Desktop on complex models
+  (auto-date tables, annotations, hierarchies, roles).
+- Incremental TMDL editing (edit only changed files instead of regenerating the model) to
+  fully preserve complex metadata.
+- Higher test coverage (target ≥ 70%).
+- Optional PyPI distribution.
+
+## Professional Portfolio Positioning
+
+This repository is also a portfolio piece demonstrating:
+
+- **Applied AI + BI**: real ML (forecasting, anomaly detection, clustering, RFM) wired into
+  a Power BI workflow via the emerging MCP standard.
+- **Software engineering**: modular architecture, typed Pydantic models, domain exceptions,
+  automated backups/audit, and a real test suite with `ruff` + `mypy` in CI.
+- **Security & governance awareness**: PII masking, encryption, audit logging and safe
+  file handling by design.
+- **Interoperability thinking**: designed to orchestrate alongside Microsoft's official MCP
+  rather than compete with it.
+
+## Development
 
 ```powershell
 pip install -e ".[dev]"
@@ -374,85 +287,51 @@ python -m mypy src
 python -m pytest -q
 ```
 
-El proyecto usa `src layout`, `pyproject.toml`, modelos Pydantic, tipado con
-`py.typed`, excepciones de dominio y separacion por paquetes funcionales.
+## License
 
-## Publicacion En GitHub
+This project uses a **dual-licensing** model:
 
-El repositorio incluye los archivos base para publicacion abierta:
+| Use | License |
+|-----|---------|
+| Personal, educational, open source (AGPL-compatible) | ✅ **Free** — [AGPL v3](LICENSE) |
+| Commercial, SaaS, private/enterprise product | 💰 **Commercial License** — [terms](COMMERCIAL_LICENSE.md) |
 
-- Licencia MIT.
-- `.gitignore` para excluir `.env`, `.venv`, caches, backups, logs y binarios
-  Power BI pesados.
-- Workflow de CI en `.github/workflows/ci.yml`.
-- Politica de seguridad en `SECURITY.md`.
-- Guia de contribucion en `CONTRIBUTING.md`.
+- **AGPL v3 — free use:** if you use this software in an AGPL-compatible open-source project,
+  it is completely free. See [LICENSE](LICENSE).
+- **Commercial License:** if you integrate it into private products, SaaS or enterprise tools
+  without publishing your source code, you need a commercial license.
 
-Antes de publicar, revisa que no se suban secretos reales ni proyectos PBIX
-privados. Si se publica manualmente desde la web de GitHub, no incluyas
-`.venv`, `.pytest_cache`, `.coverage`, `logs`, `backups`, `.pbip_backups` ni
-`src/*.egg-info`.
-
-## Licencia
-
-Este proyecto usa un modelo de **Dual License**:
-
-| Uso | Licencia |
-|-----|----------|
-| Personal, educativo, open source (AGPL compatible) | ✅ **Gratis** — [AGPL v3](LICENSE) |
-| Comercial, SaaS, producto privado, enterprise | 💰 **Commercial License** — [Ver términos](COMMERCIAL_LICENSE.md) |
-
-### AGPL v3 — Uso libre
-Si usas este software en un proyecto open source compatible con AGPL,
-es completamente gratuito. Ver [LICENSE](LICENSE).
-
-### Commercial License — Uso empresarial
-Si integras este software en productos privados, SaaS o herramientas
-enterprise sin publicar tu código fuente, necesitas una licencia comercial.
-
-📧 **Contacto:** jeyssonzerpa@gmail.com
-📄 **Términos completos:** [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)
-
----
+📧 **Contact:** jeyssonzerpa@gmail.com · 📄 [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)
 
 ## Built With
 
-This project was designed and developed by **Jeysson Zerpa** using a
-multi-agent, multi-IDE workflow across several AI-assisted environments:
+Designed and developed by **Jeysson Zerpa** using a multi-agent, multi-IDE, AI-assisted
+workflow:
 
 | Tool | Role |
 |------|------|
-| **Claude (Anthropic)** | Architecture design, code generation, auditing, refactoring, DevOps |
-| **Cursor** | AI-assisted development and code completion |
-| **VS Code** | Primary code editor and workspace management |
+| **Claude (Anthropic)** | Architecture, code generation, auditing, refactoring, DevOps |
+| **Cursor** | AI-assisted development and completion |
+| **VS Code** | Primary editor and workspace management |
 | **OpenCode** | AI terminal coding assistant |
 | **Antigravity** | AI development support |
 
-> All code, design decisions, and project direction were driven by
-> **Jeysson Zerpa**. AI tools were used as coding assistants under
-> his supervision and review.
+> All code, design decisions and project direction were driven by **Jeysson Zerpa**. AI tools
+> were used as coding assistants under his supervision and review.
 
----
+## Contact
 
-## Contacto
-
-¿Tienes preguntas, ideas o quieres contribuir al proyecto? Puedes escribirme:
-
-- 💬 **WhatsApp:** [+55 (35) 99888-9882](https://wa.me/5535998889882) — la vía más rápida
-- 🐛 **Issues:** [reporta bugs o sugiere mejoras](https://github.com/jeyssonlza/powerbi-mcp-server/issues)
-
-Para temas de seguridad, revisa primero [SECURITY.md](SECURITY.md).
-
----
+- 💬 **WhatsApp:** [+55 (35) 99888-9882](https://wa.me/5535998889882) — fastest way
+- 🐛 **Issues:** [report bugs or suggest improvements](https://github.com/jeyssonlza/powerbi-mcp-server/issues)
 
 ## Disclaimer
 
 > **Power BI MCP Server is an independent open-source project and is NOT affiliated with,
 > endorsed by, or sponsored by Microsoft Corporation.**
 >
-> "Power BI" is a registered trademark of Microsoft Corporation. This project uses the
-> name solely to describe interoperability with Microsoft Power BI products.
+> "Power BI" is a registered trademark of Microsoft Corporation. This project uses the name
+> solely to describe interoperability with Microsoft Power BI products.
 >
 > Use of the Power BI REST API is subject to
-> [Microsoft's Terms of Service](https://learn.microsoft.com/en-us/rest/api/power-bi/).
-> This tool does not redistribute any Microsoft software or proprietary code.
+> [Microsoft's Terms of Service](https://learn.microsoft.com/en-us/rest/api/power-bi/). This
+> tool does not redistribute any Microsoft software or proprietary code.

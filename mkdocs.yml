@@ -8,9 +8,9 @@ site_description: Professional MCP server for Power BI automation — 66 tools f
 site_author: Jeysson Zerpa
 site_url: https://powerbi-mcp-server.readthedocs.io
 
-repo_name: jeyssonzerpa/powerbi-mcp-server
-repo_url: https://github.com/jeyssonzerpa/powerbi-mcp-server
-edit_uri: edit/main/docs/
+repo_name: jeyssonlza/powerbi-mcp-server
+repo_url: https://github.com/jeyssonlza/powerbi-mcp-server
+edit_uri: edit/master/docs/
 
 # ─── Theme ─────────────────────────────────────────────────────────────────
 theme:
@@ -106,6 +106,6 @@ extra:
     provider: mike
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/jeyssonzerpa/powerbi-mcp-server
+      link: https://github.com/jeyssonlza/powerbi-mcp-server
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/powerbi-mcp-server/

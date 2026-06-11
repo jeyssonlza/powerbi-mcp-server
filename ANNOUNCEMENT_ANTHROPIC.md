@@ -63,7 +63,7 @@ pip install powerbi-mcp-server
 
 ### 📚 Links
 
-- **GitHub:** https://github.com/jeyssonzerpa/powerbi-mcp-server
+- **GitHub:** https://github.com/jeyssonlza/powerbi-mcp-server
 - **PyPI:** https://pypi.org/project/powerbi-mcp-server/
 - **Docs:** https://powerbi-mcp-server.readthedocs.io
 - **Docker:** `docker compose up -d`
