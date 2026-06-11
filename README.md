@@ -1,6 +1,6 @@
 # Power BI MCP Server
 
-**A professional Model Context Protocol (MCP) server that lets AI assistants read, analyze, document, secure and modify Power BI projects (PBIP/PBIX) through natural language.**
+**A professional Model Context Protocol (MCP) server that lets AI assistants analyze, document, secure and apply AI/ML to Power BI projects (PBIP/PBIX) through natural language — pairing with Microsoft's official MCP for model authoring.**
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![MCP](https://img.shields.io/badge/MCP-compatible-7e56c2.svg)](https://modelcontextprotocol.io/)
@@ -24,15 +24,22 @@ modeling, auditing and automation become reproducible engineering workflows rath
 manual clicking. The codebase follows a modular `src` layout with Pydantic models, full type
 hints, domain exceptions, automated backups and an audited write path.
 
-> This is **not** a read-only data connector. It is a toolkit to **automate, document, audit
-> and improve** Power BI projects with AI.
+> **What it is:** an **analysis, documentation and AI layer** for Power BI. Its strengths are
+> reading models, validating DAX, generating documentation, applying AI/ML, enforcing security
+> and producing visuals — fast, from natural language, without opening Power BI.
+>
+> **What it is NOT:** a replacement for *building* the model. For authoring tables, measures and
+> relationships against a live model, pair it with Microsoft's official `powerbi-modeling-mcp`
+> (see [Difference from Microsoft](#difference-from-microsoft-power-bi-mcp)). This server's own
+> model-writer is reliable for **simple** models and is being hardened for complex ones
+> (see [Roadmap](#roadmap)).
 
 ## What Problem It Solves
 
 BI teams lose hours on repetitive, error-prone manual work:
 
-- Editing semantic models by hand across many TMDL/PBIR files.
-- Writing and validating DAX without a fast feedback loop.
+- Understanding and reviewing semantic models scattered across many TMDL/PBIR files.
+- Validating DAX without a fast feedback loop.
 - Producing and maintaining technical documentation and data dictionaries.
 - Running ad-hoc analytics (anomalies, forecasting, segmentation) outside the model.
 - Keeping backups, audit trails and PII controls consistent.
@@ -55,9 +62,10 @@ tools through a well-defined contract. For Power BI, that means:
 
 - **Project lifecycle (10 tools)** — open/inspect PBIP projects, structure exploration,
   automatic backups, restore, and PBIP→PBIX conversion (via `pbi-tools` when available).
-- **Semantic modeling (22 tools)** — tables, columns, measures, relationships; DAX
-  validation; relationship diagnostics (broken/ambiguous/bidirectional/isolated); star vs
-  snowflake schema classification.
+- **Semantic model (22 tools)** — inspect tables/columns/measures/relationships, **validate
+  DAX**, diagnose relationships (broken/ambiguous/bidirectional/isolated) and classify schema
+  (star/snowflake). Includes write operations that are reliable for **simple** models; for
+  complex live models, author with Microsoft's MCP and use this server to analyze the result.
 - **AI/ML analytics (8 tools)** — anomaly detection, clustering, time-series forecasting,
   RFM segmentation, correlation matrices, explainable decision trees, regression and
   classification — with optional integration of results back into the model.
