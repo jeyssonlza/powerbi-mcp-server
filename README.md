@@ -251,6 +251,9 @@ Ready-to-use MCP client configs are in [clients/](clients/).
 
 See [SECURITY.md](SECURITY.md) for the disclosure policy.
 
+> **Commercial use notice:** using this software in proprietary products or SaaS without
+> publishing your source code under AGPL requires a commercial license. See [LEGAL.md](LEGAL.md).
+
 ## Quality & Testing
 
 ```powershell
