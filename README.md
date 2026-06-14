@@ -24,15 +24,14 @@ modeling, auditing and automation become reproducible engineering workflows rath
 manual clicking. The codebase follows a modular `src` layout with Pydantic models, full type
 hints, domain exceptions, automated backups and an audited write path.
 
-> **What it is:** an **analysis, documentation and AI layer** for Power BI. Its strengths are
-> reading models, validating DAX, generating documentation, applying AI/ML, enforcing security
-> and producing visuals — fast, from natural language, without opening Power BI.
+> **What it is:** a complete automation layer for Power BI PBIP projects — create **native
+> Power BI visuals**, run AI/ML analytics, generate documentation, enforce security and validate
+> DAX, all from natural language without opening Power BI Desktop.
 >
-> **What it is NOT:** a replacement for *building* the model. For authoring tables, measures and
-> relationships against a live model, pair it with Microsoft's official `powerbi-modeling-mcp`
-> (see [Difference from Microsoft](#difference-from-microsoft-power-bi-mcp)). This server's own
-> model-writer is reliable for **simple** models and is being hardened for complex ones
-> (see [Roadmap](#roadmap)).
+> **What it is NOT:** a replacement for *building* the semantic model. For authoring tables,
+> measures and relationships against a live model, pair it with Microsoft's official
+> `powerbi-modeling-mcp` (see [Difference from Microsoft](#difference-from-microsoft-power-bi-mcp)).
+> The two work as a team: Microsoft's MCP builds the model, this server does everything else.
 
 ## What Problem It Solves
 
@@ -64,13 +63,12 @@ tools through a well-defined contract. For Power BI, that means:
   automatic backups, restore, and PBIP→PBIX conversion (via `pbi-tools` when available).
 - **Semantic model (22 tools)** — inspect tables/columns/measures/relationships, **validate
   DAX**, diagnose relationships (broken/ambiguous/bidirectional/isolated) and classify schema
-  (star/snowflake). Includes write operations that are reliable for **simple** models; for
-  complex live models, author with Microsoft's MCP and use this server to analyze the result.
+  (star/snowflake). Reads PBIP projects built by Microsoft's MCP and analyzes the full result.
 - **AI/ML analytics (8 tools)** — anomaly detection, clustering, time-series forecasting,
   RFM segmentation, correlation matrices, explainable decision trees, regression and
   classification — with optional integration of results back into the model.
-- **Visuals & reports (7 tools)** — PBIR pages and visuals, auto-layout dashboards,
-  interactive Plotly HTML exports, and Power BI themes.
+- **Visuals & reports (7 tools)** — **native Power BI visuals and pages (PBIR)**, KPI cards,
+  auto-layout dashboards, Power BI themes, and optional Plotly HTML exports for external use.
 - **Analysis & docs (8 tools)** — data quality, profiling, static performance review, best
   practices, technical documentation (Markdown/HTML), data dictionary and per-project
   changelog.
@@ -88,7 +86,7 @@ replacement. The two operate on different surfaces and are best used together:
 |--------|----------------------------------|------------------------------|
 | Target | **Live model** in Power BI Desktop (TOM/AMO) | **PBIP/PBIX files on disk** |
 | Power BI state | Requires Desktop **open** | Works with Desktop **closed** |
-| Core strength | Writing the model, executing real DAX, calculation groups, performance trace | AI/ML, data quality, documentation, security/PII, HTML visuals |
+| Core strength | Writing the model, executing real DAX, calculation groups, performance trace | Native Power BI visuals (PBIR), AI/ML analytics, data quality, documentation, security/PII |
 | Best for | Authoring and validating the semantic model against the live engine | Local/professional automation, analysis, governance and reporting |
 
 A practical, respectful division of labor: **let Microsoft's engine write and validate the
@@ -174,16 +172,26 @@ Generate the technical documentation and data dictionary for this project.
 
 ## Demo Workflow
 
-A typical "analyze and document a project" session (Power BI Desktop closed):
+End-to-end validated workflow — from raw data to a fully functional PBIX with model, visuals
+and documentation, **without a single manual click on the report canvas**:
 
-1. `open_project` → load the PBIP and read its model.
-2. `list_tables` + `describe_table` → understand the schema.
-3. `analyze_data_quality` + `diagnose_relationships` → spot issues.
-4. `forecast_series` / `detect_anomalies` → run AI on real data.
-5. `create_visual` / `export_html_visual` → build visuals from the results.
-6. `generate_documentation` + `generate_data_dictionary` → leave a record.
+**Phase 1 — Model (Power BI Desktop open + Microsoft MCP)**
 
-Every step that writes to disk creates an automatic backup first.
+1. Load source tables in Power BI Desktop (Power Query).
+2. Microsoft MCP (natural language): create calendar table, treat data, build star schema,
+   create all DAX measures.
+3. Save as PBIX → then **Save as PBIP** (folder). Close Power BI Desktop.
+
+**Phase 2 — Visuals, analysis and docs (Desktop closed + this MCP)**
+
+4. `open_project` → analyze the PBIP project and the model built in Phase 1.
+5. `create_page` + `create_visual` → generate **native Power BI pages and KPIs** from the
+   existing measures, in natural language.
+6. `analyze_data_quality` + `generate_documentation` → quality check and full documentation.
+7. `convert_to_pbix` → deliver a complete, functional PBIX.
+
+Every write step creates an automatic backup first. Result: a production-ready PBIX with
+model + visuals + documentation, built entirely through natural language across two MCPs.
 
 ## Installation
 
@@ -266,8 +274,6 @@ Verified reference results (real execution, not estimated):
 
 ## Roadmap
 
-- End-to-end validation of the model writer against Power BI Desktop on complex models
-  (auto-date tables, annotations, hierarchies, roles).
 - Incremental TMDL editing (edit only changed files instead of regenerating the model) to
   fully preserve complex metadata.
 - Higher test coverage (target ≥ 70%).
