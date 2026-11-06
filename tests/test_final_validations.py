@@ -220,9 +220,13 @@ class TestCodeQuality:
                 if stripped.startswith(("import ", "from ")):
                     in_imports = True
                     import_section.append((i, stripped))
-                elif in_imports and stripped and not stripped.startswith("#"):
-                    if not stripped.startswith(("import ", "from ")):
-                        break
+                elif (
+                    in_imports
+                    and stripped
+                    and not stripped.startswith("#")
+                    and not stripped.startswith(("import ", "from "))
+                ):
+                    break
 
             # Verificar que __future__ es primera si existe
             for idx, (line_num, imp) in enumerate(import_section):

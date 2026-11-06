@@ -77,10 +77,9 @@ def write_text_file(
             "preview": content[:2000],
         }
 
-    if backup and target.exists():
-        auto_backup(target, reason=reason)
-
     try:
+        if backup and target.exists():
+            auto_backup(target, reason=reason)
         target.parent.mkdir(parents=True, exist_ok=True)
         _atomic_write(target, content)
     except OSError as exc:
